@@ -1,0 +1,630 @@
+/* ═══ TipTap Editor Core Styles ═══ */
+.ProseMirror {
+  outline: none;
+  min-height: 500px;
+  line-height: 1.7;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #9ca3af;
+  pointer-events: none;
+  height: 0;
+}
+
+/* ═══ Typography ═══ */
+.ProseMirror h1 {
+  font-size: 2.25rem;
+  font-weight: 700;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+.ProseMirror h2 {
+  font-size: 1.875rem;
+  font-weight: 600;
+  margin-top: 1.75rem;
+  margin-bottom: 0.875rem;
+  line-height: 1.3;
+}
+
+.ProseMirror h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  line-height: 1.4;
+}
+
+.ProseMirror h4 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 1.25rem;
+  margin-bottom: 0.625rem;
+}
+
+.ProseMirror h5 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.ProseMirror h6 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ═══ Paragraph & Text ═══ */
+.ProseMirror p {
+  margin-bottom: 0.75rem;
+}
+
+.ProseMirror p:last-child {
+  margin-bottom: 0;
+}
+
+/* ═══ Lists ═══ */
+.ProseMirror ul,
+.ProseMirror ol {
+  padding-left: 1.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.ProseMirror ul li {
+  list-style-type: disc;
+  margin-bottom: 0.25rem;
+}
+
+.ProseMirror ol li {
+  list-style-type: decimal;
+  margin-bottom: 0.25rem;
+}
+
+.ProseMirror ul li p,
+.ProseMirror ol li p {
+  margin-bottom: 0.25rem;
+}
+
+/* ═══ Blockquote ═══ */
+.ProseMirror blockquote {
+  border-left: 4px solid var(--brand-primary, #3b82f6);
+  padding-left: 1.25rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  margin: 1rem 0;
+  font-style: italic;
+  color: var(--text-secondary, #6b7280);
+  background-color: var(--bg-secondary, #f3f4f6);
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.ProseMirror blockquote p {
+  margin-bottom: 0.5rem;
+}
+
+.ProseMirror blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+/* ═══ Code Block ═══ */
+.ProseMirror pre {
+  background-color: #1f2937;
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+  margin: 1rem 0;
+  overflow-x: auto;
+  position: relative;
+}
+
+.ProseMirror pre code {
+  font-family: 'Fira Code', 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: #e5e7eb;
+  background: none;
+  padding: 0;
+  border-radius: 0;
+}
+
+.ProseMirror code {
+  font-family: 'Fira Code', 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 0.875em;
+  background-color: var(--bg-secondary, #f3f4f6);
+  padding: 0.2em 0.4em;
+  border-radius: 0.25rem;
+  color: var(--brand-primary, #3b82f6);
+}
+
+.ProseMirror pre code {
+  color: #e5e7eb;
+  background: none;
+  padding: 0;
+}
+
+/* ═══ Images ═══ */
+.ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  display: block;
+  margin: 1rem auto;
+}
+
+.ProseMirror img.ProseMirror-selectednode {
+  outline: 2px solid var(--brand-primary, #3b82f6);
+  outline-offset: 2px;
+}
+
+/* ═══ Links ═══ */
+.ProseMirror a {
+  color: var(--brand-primary, #3b82f6);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: opacity 0.15s;
+}
+
+.ProseMirror a:hover {
+  opacity: 0.8;
+}
+
+/* ═══ Horizontal Rule ═══ */
+.ProseMirror hr {
+  border: none;
+  border-top: 2px solid var(--border-color, #e5e7eb);
+  margin: 2rem 0;
+}
+
+/* ═══ Tables ═══ */
+.ProseMirror table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1rem 0;
+  overflow-x: auto;
+  display: table;
+}
+
+.ProseMirror table td,
+.ProseMirror table th {
+  border: 1px solid var(--border-color, #e5e7eb);
+  padding: 0.75rem 1rem;
+  vertical-align: top;
+  min-width: 50px;
+}
+
+.ProseMirror table th {
+  background-color: var(--bg-secondary, #f3f4f6);
+  font-weight: 600;
+  text-align: left;
+}
+
+.ProseMirror table td p,
+.ProseMirror table th p {
+  margin: 0;
+}
+
+.ProseMirror table td p + p,
+.ProseMirror table th p + p {
+  margin-top: 0.5rem;
+}
+
+/* Table selection */
+.ProseMirror .selectedCell {
+  background-color: rgba(59, 130, 246, 0.1);
+  border-color: var(--brand-primary, #3b82f6);
+}
+
+/* Column resize handle */
+.ProseMirror .column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: var(--brand-primary, #3b82f6);
+  cursor: col-resize;
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.ProseMirror table:hover .column-resize-handle {
+  opacity: 1;
+}
+
+.ProseMirror .resize-cursor {
+  cursor: col-resize;
+}
+
+/* ═══ FAQ Accordion ═══ */
+.faq-accordion {
+  margin: 1rem 0;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.faq-item {
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.faq-item:last-child {
+  border-bottom: none;
+}
+
+.faq-item summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  background-color: var(--bg-secondary, #f3f4f6);
+  cursor: pointer;
+  list-style: none;
+  font-weight: 600;
+  color: var(--text-primary, #111827);
+  transition: background-color 0.15s;
+}
+
+.faq-item summary:hover {
+  background-color: var(--bg-primary, #e5e7eb);
+}
+
+.faq-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq-item summary svg {
+  transition: transform 0.2s;
+  flex-shrink: 0;
+  margin-left: 0.5rem;
+}
+
+.faq-item[open] summary svg {
+  transform: rotate(90deg);
+}
+
+.faq-item > div {
+  padding: 1rem 1.25rem;
+  color: var(--text-primary, #374151);
+  line-height: 1.7;
+}
+
+/* ═══ Selection & Focus ═══ */
+.ProseMirror ::selection {
+  background-color: rgba(59, 130, 246, 0.2);
+}
+
+.ProseMirror:focus {
+  outline: none;
+}
+
+/* ═══ Gap Cursor ═══ */
+.ProseMirror-gapcursor {
+  display: none;
+  pointer-events: none;
+  position: absolute;
+}
+
+.ProseMirror-gapcursor:after {
+  content: "";
+  display: block;
+  position: absolute;
+  top: -2px;
+  width: 20px;
+  border-top: 1px solid black;
+  animation: ProseMirror-cursor-blink 1.1s steps(2, start) infinite;
+}
+
+@keyframes ProseMirror-cursor-blink {
+  to {
+    visibility: hidden;
+  }
+}
+
+.ProseMirror-focused .ProseMirror-gapcursor {
+  display: block;
+}
+
+/* ═══ Placeholder ═══ */
+.ProseMirror p.is-empty::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #9ca3af;
+  pointer-events: none;
+  height: 0;
+}
+
+/* ═══ Subscript & Superscript ═══ */
+.ProseMirror sub {
+  vertical-align: sub;
+  font-size: 0.75em;
+}
+
+.ProseMirror sup {
+  vertical-align: super;
+  font-size: 0.75em;
+}
+
+/* ═══ Highlight ═══ */
+.ProseMirror mark {
+  background-color: #fef08a;
+  padding: 0.1em 0.2em;
+  border-radius: 0.15rem;
+}
+
+/* ═══ Bubble Menu & Floating Menu ═══ */
+.tippy-box {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.tippy-content {
+  padding: 0 !important;
+}
+
+/* ═══ Responsive ═══ */
+@media (max-width: 768px) {
+  .ProseMirror h1 { font-size: 1.75rem; }
+  .ProseMirror h2 { font-size: 1.5rem; }
+  .ProseMirror h3 { font-size: 1.25rem; }
+  .ProseMirror h4 { font-size: 1.125rem; }
+  .ProseMirror h5 { font-size: 1rem; }
+  .ProseMirror h6 { font-size: 0.875rem; }
+
+  .ProseMirror table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+}
+
+/* ═══ Enhanced Table Styles ═══ */
+.editor-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.editor-table th,
+.editor-table td {
+  border: 1px solid #e5e7eb;
+  padding: 12px 16px;
+  vertical-align: top;
+}
+
+.editor-table th {
+  background: linear-gradient(to bottom, #f8fafc, #f1f5f9);
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #1e293b;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.dark .editor-table th {
+  background: linear-gradient(to bottom, #1e293b, #0f172a);
+  color: #f1f5f9;
+  border-color: #334155;
+}
+
+.editor-table td {
+  background-color: #ffffff;
+  color: #334155;
+}
+
+.dark .editor-table td {
+  background-color: #1e293b;
+  color: #e2e8f0;
+  border-color: #334155;
+}
+
+.editor-table tr:hover td {
+  background-color: #f8fafc;
+}
+
+.dark .editor-table tr:hover td {
+  background-color: #334155;
+}
+
+/* Table header cells */
+.table-header-cell {
+  background: linear-gradient(to bottom, #f8fafc, #f1f5f9);
+  font-weight: 600;
+  padding: 12px 16px;
+}
+
+.dark .table-header-cell {
+  background: linear-gradient(to bottom, #1e293b, #0f172a);
+}
+
+/* Table cells */
+.table-cell {
+  padding: 12px 16px;
+}
+
+/* Selected cell for table operations */
+.ProseMirror .selectedCell {
+  background-color: rgba(59, 130, 246, 0.15);
+  outline: 1px solid #3b82f6;
+}
+
+/* Column resize handle */
+.ProseMirror .column-resize-handle {
+  background-color: #3b82f6;
+  bottom: -2px;
+  position: absolute;
+  right: -2px;
+  pointer-events: none;
+  top: 0;
+  width: 3px;
+}
+
+/* Table wrapper for horizontal scroll on mobile */
+.ProseMirror .tableWrapper {
+  overflow-x: auto;
+  margin: 1.5rem 0;
+}
+
+/* Responsive table */
+@media (max-width: 768px) {
+  .editor-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+}
+
+/* ═══ Enhanced Highlight Styles ═══ */
+.ProseMirror mark {
+  padding: 0.1em 0.2em;
+  border-radius: 0.25rem;
+}
+
+/* Different highlight colors */
+.ProseMirror mark[style*="background-color: #fef08a"] {
+  background-color: #fef08a !important;
+}
+
+.ProseMirror mark[style*="background-color: #bbf7d0"] {
+  background-color: #bbf7d0 !important;
+}
+
+.ProseMirror mark[style*="background-color: #bfdbfe"] {
+  background-color: #bfdbfe !important;
+}
+
+.ProseMirror mark[style*="background-color: #fbcfe8"] {
+  background-color: #fbcfe8 !important;
+}
+
+.ProseMirror mark[style*="background-color: #e9d5ff"] {
+  background-color: #e9d5ff !important;
+}
+
+.ProseMirror mark[style*="background-color: #fed7aa"] {
+  background-color: #fed7aa !important;
+}
+
+.ProseMirror mark[style*="background-color: #fecaca"] {
+  background-color: #fecaca !important;
+}
+
+.ProseMirror mark[style*="background-color: #e5e7eb"] {
+  background-color: #e5e7eb !important;
+}
+
+/* Dark mode highlight adjustments */
+.dark .ProseMirror mark[style*="background-color: #fef08a"] {
+  background-color: #854d0e !important;
+  color: #fef08a !important;
+}
+
+.dark .ProseMirror mark[style*="background-color: #bbf7d0"] {
+  background-color: #14532d !important;
+  color: #bbf7d0 !important;
+}
+
+.dark .ProseMirror mark[style*="background-color: #bfdbfe"] {
+  background-color: #1e3a8a !important;
+  color: #bfdbfe !important;
+}
+
+/* ═══ Code Block Styling ═══ */
+.code-block {
+  background-color: #1e293b;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin: 1rem 0;
+  overflow-x: auto;
+  font-family: 'Fira Code', 'Consolas', monospace;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.code-block code {
+  color: #e2e8f0;
+  background: none;
+  padding: 0;
+}
+
+/* ═══ FAQ Accordion Styling ═══ */
+.faq-accordion {
+  margin: 1.5rem 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.dark .faq-accordion {
+  border-color: #334155;
+}
+
+.faq-item {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.dark .faq-item {
+  border-color: #334155;
+}
+
+.faq-item:last-child {
+  border-bottom: none;
+}
+
+.faq-item summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  background-color: #f8fafc;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+  list-style: none;
+}
+
+.dark .faq-item summary {
+  background-color: #1e293b;
+}
+
+.faq-item summary:hover {
+  background-color: #f1f5f9;
+}
+
+.dark .faq-item summary:hover {
+  background-color: #334155;
+}
+
+.faq-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq-icon {
+  transition: transform 0.2s;
+}
+
+.faq-item[open] .faq-icon {
+  transform: rotate(90deg);
+}
+
+.faq-answer {
+  padding: 1rem 1.25rem;
+  background-color: #ffffff;
+  border-top: 1px solid #e5e7eb;
+}
+
+.dark .faq-answer {
+  background-color: #0f172a;
+  border-color: #334155;
+}

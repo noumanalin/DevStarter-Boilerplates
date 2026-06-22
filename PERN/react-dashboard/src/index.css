@@ -1,0 +1,116 @@
+@import "tailwindcss";
+@import "./style/textEditor.css";
+
+:root {
+  /* Brand Colors - These will be overridden by theme presets */
+  --brand-primary: #2563eb;
+  --brand-secondary: #1d4ed8;
+  --brand-tertiary: #93c5fd;
+
+  /* Light Theme */
+  --background: #ffffff;
+  --surface: #f8f9fa;
+  --surface-hover: #f1f3f5;
+  --border: #e9ecef;
+  
+  /* Text Colors */
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --muted: #9ca3af;
+}
+
+[data-theme="dark"] {
+  --background: #121212;
+  --surface: #1e1e1e;
+  --surface-hover: #2a2a2a;
+  --border: #2c2c2e;
+  
+  --text-primary: #f9fafb;
+  --text-secondary: #d1d5db;
+  --muted: #6b7280;
+}
+
+/* =========================================
+   COLOR THEME PRESETS
+   Each theme has primary, secondary, tertiary
+========================================= */
+
+/* Blue Theme (Default) */
+[data-color="blue"] {
+  --brand-primary: #2563eb;
+  --brand-secondary: #1d4ed8;
+  --brand-tertiary: #93c5fd;
+}
+
+[data-color="red"] {
+  --brand-primary: #f21e26;
+  --brand-secondary: #d41a22;
+  --brand-tertiary: #f87171;
+}
+
+[data-color="green"] {
+  --brand-primary: #16a34a;
+  --brand-secondary: #15803d;
+  --brand-tertiary: #86efac;
+}
+
+[data-color="purple"] {
+  --brand-primary: #9333ea;
+  --brand-secondary: #7e22ce;
+  --brand-tertiary: #c4b5fd;
+}
+
+[data-color="orange"] {
+  --brand-primary: #ea580c;
+  --brand-secondary: #c2410c;
+  --brand-tertiary: #fdba74;
+}
+
+[data-color="pink"] {
+  --brand-primary: #ec4899;
+  --brand-secondary: #db2777;
+  --brand-tertiary: #f9a8d4;
+}
+
+[data-color="teal"] {
+  --brand-primary: #14b8a6;
+  --brand-secondary: #0d9488;
+  --brand-tertiary: #99f6e4;
+}
+
+[data-color="gold"] {
+  --brand-primary: #d4a843;
+  --brand-secondary: #b8942e;
+  --brand-tertiary: #f4d68c;
+}
+
+/* =========================================
+   TAILWIND / BODY STYLES
+========================================= */
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--text-primary);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--text-primary);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.sectionlayout {
+  max-width: 1640px;
+  margin: 0 auto;
+  padding: 3px 2.5rem;
+}
+
+@media (max-width: 1023px) {
+  .sectionlayout { padding: 3px 1.5rem; }
+}
+
+@media (max-width: 767px) {
+  .sectionlayout { padding: 3px 1rem; }
+}

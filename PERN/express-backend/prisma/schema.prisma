@@ -1,0 +1,169 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum BlogStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  PDF
+  DOC
+  OTHER
+}
+
+// -----------------------------
+// NEWSLETTER
+// -----------------------------
+model Newsletter {
+  id         Int      @id @default(autoincrement())
+  email      String   @unique
+  created_at DateTime @default(now())
+}
+
+// -----------------------------
+// BLOG CATEGORY (cleaned & indexed)
+// -----------------------------
+model BlogCategory {
+  id Int @id @default(autoincrement())
+
+  name        String
+  slug        String  @unique
+  description String?
+
+  // SEO (keep these, they are essential)
+  metaTitle       String?
+  metaDescription String?
+  canonicalUrl    String?
+
+  // Social media – optional; remove if you want to simplify
+  ogTitle            String?
+  ogDescription      String?
+  twitterTitle       String?
+  twitterDescription String?
+
+  // Robots directives
+  noIndex  Boolean @default(false)
+  noFollow Boolean @default(false)
+
+  imageUrl String?
+  color    String? // badge colour
+
+  isFeatured Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  blogs Blog[]
+
+  @@index([slug])
+  @@index([isFeatured])
+  @@index([createdAt])
+  @@index([name])
+}
+
+// -----------------------------
+// BLOG (fixed relation + indexes)
+// -----------------------------
+model Blog {
+  id Int @id @default(autoincrement())
+
+  title   String
+  slug    String @unique
+  excerpt String
+  content String @db.Text // use Text for long content
+
+  featured_img_url     String
+  featured_img_alt     String?
+  featured_img_caption String?
+  secure_url           String?
+  cloudinary_public_id String  @unique
+
+  metaTitle       String
+  metaDescription String
+
+  is_featured Boolean @default(false)
+
+  faqs          Json    @default("[]")
+  
+  schema_markup Json?
+  canonicalUrl  String?
+
+  noIndex  Boolean @default(false)
+  noFollow Boolean @default(false)
+
+  ogTitle       String?
+  ogDescription String?
+
+  twitterTitle       String?
+  twitterDescription String?
+
+  searchableSnippets String[]
+
+  authorName String
+  authorBio  String?
+
+  status BlogStatus @default(DRAFT)
+
+  views       Int  @default(0)
+  shares      Int  @default(0)
+  readingTime Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // ----- ADDED RELATION -----
+  categoryId Int?
+  category   BlogCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  // Indexes for performance
+  @@index([slug]) // unique already, but used in lookups
+  @@index([status]) // filter by DRAFT/PUBLISHED
+  @@index([createdAt]) // order by date
+  @@index([updatedAt])
+  @@index([views]) // popular posts
+  @@index([is_featured])
+  @@index([categoryId]) // foreign key
+  @@index([authorName]) // if you filter by author
+  @@index([status, createdAt])
+}
+
+// -----------------------------
+// MEDIA (optional indexes)
+// -----------------------------
+model Media {
+  id Int @id @default(autoincrement())
+
+  url        String
+  secure_url String?
+
+  cloudinary_public_id String @unique
+
+  type MediaType
+
+  original_name String?
+  mime_type     String?
+
+  width  Int?
+  height Int?
+
+  size Int? // bytes
+
+  alt_text String?
+  caption  String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([type])
+  @@index([created_at])
+  @@index([cloudinary_public_id])
+}
