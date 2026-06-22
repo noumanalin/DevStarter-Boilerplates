@@ -8,8 +8,8 @@ import {
     Menu, Clock
 } from "lucide-react";
 
-import ThemeToggle from "../../components/functional/ThemeToggle";
-import ThemeColorPicker from "../../components/functional/ThemeColorPicker";
+import ThemeToggle from "../functional/ThemeToggle";
+import ThemeColorPicker from "../functional/ThemeColorPicker";
 
 /* ─────────────────────────────────────────────
    SIDEBAR NAV ITEMS (auth‑free)
@@ -324,7 +324,7 @@ const Navbar = ({ onMobileMenuClick }) => {
 /* ─────────────────────────────────────────────
    MAIN LAYOUT (no auth checks)
 ───────────────────────────────────────────── */
-const ProtectedDBRoutes = () => {
+const DashBoardOutlet = () => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
  
@@ -348,4 +348,4 @@ const ProtectedDBRoutes = () => {
     );
 };
 
-export default ProtectedDBRoutes;
+export default DashBoardOutlet;

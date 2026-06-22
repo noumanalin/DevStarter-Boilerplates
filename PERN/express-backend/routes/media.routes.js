@@ -11,7 +11,7 @@ router.get("/cloudinary-usage", getCloudinaryUsage);
 router.post("/", upload.single("file"), createMedia);
 router.get("/", getAllMedia);
 router.get("/:id", getSingleMedia);
-router.put("/:id", updateMedia); // <- this line was missing, hence the 404
+router.put("/:id", updateMedia); 
 router.delete("/:id", deleteMedia);
 
 export default router;

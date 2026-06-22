@@ -8,9 +8,9 @@ import ManageBlogs from "./pages/Blog/ManageBlogs";
 import EditBlog from "./pages/Blog/EditBlog";
 
 import Newsletter from "./pages/Newsletter";
-import ManageMedia from "./pages/ManageMedia";
-import ProtectedDBRoutes from "./store/routes/ProtectedDBRoutes";
+import ManageMedia from "./pages/ManageMedia"; 
 import ManageBlogCategories from "./pages/Blog/ManageBlogCategories";
+import DashBoardOutlet from "./components/layout/DashBoardOutlet";
 
 
 const App = () => {
@@ -28,7 +28,7 @@ const App = () => {
         <Route path="/" element={<>{"Home Page"}</>} />
         
 
-        <Route element={<ProtectedDBRoutes />}>
+        <Route element={<DashBoardOutlet />}>
           <Route path="/dashboard" element={<>{"Dashboard Home"}</>} />
 
           {/* Blogs */}

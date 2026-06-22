@@ -1,3 +1,5 @@
+// config/nodemailer.js file is
+
 import nodemailer from "nodemailer";
 
 export const transporter = nodemailer.createTransport({

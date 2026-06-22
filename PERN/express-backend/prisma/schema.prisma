@@ -92,8 +92,8 @@ model Blog {
 
   is_featured Boolean @default(false)
 
-  faqs          Json    @default("[]")
-  
+  faqs Json @default("[]")
+
   schema_markup Json?
   canonicalUrl  String?
 
@@ -167,3 +167,111 @@ model Media {
   @@index([created_at])
   @@index([cloudinary_public_id])
 }
+
+// --------------------------------------------- Auth System ---------------------------------------------------------
+enum OtpPurpose {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
+enum Role {
+  USER
+  ADMIN
+  SUPER_ADMIN
+  MODERATOR
+  SUPPORT
+  OTHER
+}
+
+enum DeviceType {
+  MOBILE
+  TABLET
+  LAPTOP
+  DESKTOP
+  OTHER
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  BANNED
+  DELETED
+}
+
+model User {
+  id String @id @default(cuid())
+
+  name       String?
+  email      String     @unique
+  password   String
+  avatar_url String?
+  status     UserStatus @default(ACTIVE)
+
+  role        Role    @default(USER)
+  is_verified Boolean @default(false)
+
+  otp          String?
+  otp_expires  DateTime?
+  otp_purpose  OtpPurpose?
+  otp_attempts Int        @default(0)
+
+  last_login_at DateTime?
+  deleted_at    DateTime?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  logins   LoginHistory[]
+  sessions Session[]
+
+  @@index([email])
+  @@index([role])
+  @@index([status])
+  @@index([deleted_at])
+}
+
+
+model LoginHistory {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  ipAddress String?
+
+  browser    String?
+  os         String?
+  deviceType DeviceType?
+
+  screenWidth  Int?
+  screenHeight Int?
+
+  userAgent String?
+
+  created_at DateTime @default(now())
+
+  @@index([userId])
+  @@index([created_at])
+  @@index([userId, created_at])
+}
+
+model Session {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  refreshToken String      @unique // SHA-256 hash of the token, never the raw value
+  ipAddress    String?
+  userAgent    String?
+  deviceType   DeviceType?
+
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+

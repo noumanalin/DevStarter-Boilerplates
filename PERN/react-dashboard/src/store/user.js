@@ -1,0 +1,51 @@
+/**
+ * src/store/user.js
+ * Manages authentication state: user, accessToken, refreshToken, isAuthenticated.
+ * Persisted via Redux Persist — no profile API call needed on page refresh.
+ */
+import { createSlice } from "@reduxjs/toolkit";
+
+const initialState = {
+  user: null,           // { id, name, email, role, avatar_url }
+  accessToken: null,
+  refreshToken: null,
+  isAuthenticated: false,
+};
+
+const userSlice = createSlice({
+  name: "user",
+  initialState,
+  reducers: {
+    // Called after successful login — stores everything in one shot
+    setCredentials: (state, { payload }) => {
+      state.user = payload.user;
+      state.accessToken = payload.accessToken;
+      state.refreshToken = payload.refreshToken ?? state.refreshToken;
+      state.isAuthenticated = true;
+    },
+    // Called after profile update — merges only changed fields
+    updateUser: (state, { payload }) => {
+      if (state.user) {
+        state.user = { ...state.user, ...payload };
+      }
+    },
+    // Called on logout / session clear
+    clearCredentials: (state) => {
+      state.user = null;
+      state.accessToken = null;
+      state.refreshToken = null;
+      state.isAuthenticated = false;
+    },
+  },
+});
+
+export const { setCredentials, updateUser, clearCredentials } = userSlice.actions;
+
+// Selectors
+export const selectUser            = (state) => state.user.user;
+export const selectAccessToken     = (state) => state.user.accessToken;
+export const selectRefreshToken    = (state) => state.user.refreshToken;
+export const selectIsAuthenticated = (state) => state.user.isAuthenticated;
+export const selectUserRole        = (state) => state.user.user?.role;
+
+export default userSlice.reducer;

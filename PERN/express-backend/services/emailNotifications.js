@@ -1,19 +1,15 @@
 import { transporter } from "../config/nodemailer.js";
 import {
   getOtpEmailTemplate,
-  getNewUserEmailTemplate,
-  getNewsletterEmailTemplate,
-  getContactFormAdminTemplate,
-  getContactFormUserTemplate,
-  
-  getCareerApplicationUserTemplate,
-  getCareerApplicationAdminTemplate,
+  getWelcomeEmailTemplate,
+  getPasswordChangedEmailTemplate,
+  getSuspiciousLoginEmailTemplate,
+} from "./emailTemplates/auth.emails.js";
 
-} from "../utils/email-templates/index.js";
+import { getNewsletterEmailTemplate } from "./emailTemplates/newsletter.emails.js"
 
-/**
- * Generic send email function
- */
+import { adminEmail, projectName } from "../utils/info.js";
+
 const sendEmail = async ({ to, subject, html }) => {
   try {
     await transporter.sendMail({
@@ -22,7 +18,6 @@ const sendEmail = async ({ to, subject, html }) => {
       subject,
       html,
     });
-
     return true;
   } catch (error) {
     console.error("Email sending failed:", error);
@@ -30,77 +25,44 @@ const sendEmail = async ({ to, subject, html }) => {
   }
 };
 
-
-export const adminEmail = "naumanalin680@gmail.com"
-
-/* =========================
-   AUTH EMAILS
-========================= */
-
-export const sendOtpEmail = async (email, otp) => {
-  return sendEmail({
+// -------------------------------- Auth System --------------------------------------------------------
+export const sendOtpEmail = (email, otp, purpose = "EMAIL_VERIFICATION") =>
+  sendEmail({
     to: email,
-    subject: "Your OTP Code - The Nexora Digital",
-    html: getOtpEmailTemplate(otp),
+    subject: purpose === "PASSWORD_RESET" ? "Reset Your Password" : "Verify Your Email",
+    html: getOtpEmailTemplate(otp, purpose),
   });
-};
 
-export const sendNewUserEmail = async ({ name, email, role, password }) => {
-  return sendEmail({
+export const sendWelcomeEmail = (email, name) =>
+  sendEmail({
     to: email,
-    subject: "Your Account Has Been Created - The Nexora Digital",
-    html: getNewUserEmailTemplate({ name, email, role, password }),
+    subject: `Welcome to ${process.env.SMTP_FROM_NAME}!`,
+    html: getWelcomeEmailTemplate(name),
   });
-};
 
-/* =========================
-   CONTACT FORM
-========================= */
-
-export const sendContactFormAdminEmail = async (data) => {
-  return sendEmail({
-    to: adminEmail,
-    subject: `New Contact Form - ${data?.name}`,
-    html: getContactFormAdminTemplate(data),
+export const sendPasswordChangedEmail = (email, name) =>
+  sendEmail({
+    to: email,
+    subject: "Your Password Was Changed",
+    html: getPasswordChangedEmailTemplate(name),
   });
-};
 
-export const sendContactFormUserEmail = async (data) => {
-  return sendEmail({
-    to: data?.email,
-    subject: "We Received Your Message - The Nexora Digital",
-    html: getContactFormUserTemplate(data),
+export const sendLoginAlertEmail = (email, name, meta) =>
+  sendEmail({
+    to: email,
+    subject: "New Login to Your Account",
+    html: getSuspiciousLoginEmailTemplate(name, meta),
   });
-};
 
-/* =========================
+
+  /* =========================
    NEWSLETTER
 ========================= */
 
 export const sendNewsletterWelcomeEmail = async (email) => {
   return sendEmail({
     to: email,
-    subject: "Welcome to The Nexora Newsletter",
+    subject: `Welcome to ${projectName} Newsletter`,
     html: getNewsletterEmailTemplate(email),
-  });
-};
-
-/* =========================
-   CAREER APPLICATION
-========================= */
-
-export const sendCareerApplicationUserEmail = async (data) => {
-  return sendEmail({
-    to: data?.email,
-    subject: `Application Received: ${data?.position_applied_for} - The Nexora Digital`,
-    html: getCareerApplicationUserTemplate(data),
-  });
-};
-
-export const sendCareerApplicationAdminEmail = async (data) => {
-  return sendEmail({
-    to: adminEmail,
-    subject: `New Job Application: ${data?.position_applied_for} from ${data?.name}`,
-    html: getCareerApplicationAdminTemplate(data),
   });
 };
