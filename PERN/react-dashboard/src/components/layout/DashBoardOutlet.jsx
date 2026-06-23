@@ -1,3 +1,5 @@
+// My src/components/layout/DashBoardOutlet.jsx file is
+
 import { useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import {

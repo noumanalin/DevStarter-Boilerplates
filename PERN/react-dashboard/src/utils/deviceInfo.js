@@ -4,7 +4,7 @@
  *   browser, os, deviceType (MOBILE|TABLET|LAPTOP|DESKTOP|OTHER),
  *   screenWidth, screenHeight, userAgent
  */
-import UAParser from "ua-parser-js";
+import { UAParser } from "ua-parser-js";
 
 export const getDeviceInfo = () => {
   const parser = new UAParser();

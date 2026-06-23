@@ -36,9 +36,9 @@ app.use(express.urlencoded({ extended: true, limit: "3mb" }));
 
 app.use("/api", apiRateLimiter);
 
-app.use("/api/auth", authRateLimiter, authRoutes);
-app.use("/api/user", authRateLimiter, userRoutes);
-app.use("/api/session", authRateLimiter, sessionRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/user", userRoutes);
+app.use("/api/session", sessionRoutes);
 
 app.use("/api/newsletter", newsletterRateLimiter, newsletterRoutes);
 app.use("/api/blogs", blogRoutes);

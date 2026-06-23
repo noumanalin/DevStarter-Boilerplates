@@ -1,23 +1,10 @@
 import express from "express";
-import multer from "multer";
 import isLoggedIn from "../../middlewares/isLoggedIn.js";
-import {
-  getProfile, updateProfile, getLoginHistory,
-  getAllUsers, getUserById, updateUserRole,
-  updateUserStatus, deleteUser,
-} from "../../controllers/auth/session.controller.js";
+import { getActiveSessions, revokeSession } from "../../controllers/auth/session.controller.js";
 
 const router = express.Router();
-const upload = multer({ storage: multer.memoryStorage() });
 
-router.get("/profile",        isLoggedIn(),                                    getProfile);
-router.put("/profile",        isLoggedIn(), upload.single("avatar"),           updateProfile);
-router.get("/login-history",  isLoggedIn(),                                    getLoginHistory);
-
-router.get("/",               isLoggedIn(["ADMIN", "SUPER_ADMIN"]),            getAllUsers);
-router.get("/:id",            isLoggedIn(["ADMIN", "SUPER_ADMIN"]),            getUserById);
-router.patch("/:id/role",     isLoggedIn(["SUPER_ADMIN"]),                     updateUserRole);
-router.patch("/:id/status",   isLoggedIn(["ADMIN", "SUPER_ADMIN"]),            updateUserStatus);
-router.delete("/:id",         isLoggedIn(["SUPER_ADMIN"]),                     deleteUser);
+router.get("/active",      isLoggedIn(), getActiveSessions);
+router.delete("/:id", isLoggedIn(), revokeSession);
 
 export default router;

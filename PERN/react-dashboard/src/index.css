@@ -17,6 +17,13 @@
   --text-primary: #111827;
   --text-secondary: #4b5563;
   --muted: #9ca3af;
+
+  /* Status Colors */
+  --accent: var(--brand-primary);
+  --info: #3b82f6;
+  --success: #22c55e;
+  --danger: #ef4444;
+  --warning: #f59e0b;
 }
 
 [data-theme="dark"] {
@@ -28,6 +35,12 @@
   --text-primary: #f9fafb;
   --text-secondary: #d1d5db;
   --muted: #6b7280;
+  
+  /* Dark Theme Status Colors */
+  --info: #60a5fa;
+  --success: #4ade80;
+  --danger: #f87171;
+  --warning: #fbbf24;
 }
 
 /* =========================================
@@ -40,50 +53,57 @@
   --brand-primary: #2563eb;
   --brand-secondary: #1d4ed8;
   --brand-tertiary: #93c5fd;
+  --accent: #2563eb;
 }
 
 [data-color="red"] {
   --brand-primary: #f21e26;
   --brand-secondary: #d41a22;
   --brand-tertiary: #f87171;
+  --accent: #f21e26;
 }
 
 [data-color="green"] {
   --brand-primary: #16a34a;
   --brand-secondary: #15803d;
   --brand-tertiary: #86efac;
+  --accent: #16a34a;
 }
 
 [data-color="purple"] {
   --brand-primary: #9333ea;
   --brand-secondary: #7e22ce;
   --brand-tertiary: #c4b5fd;
+  --accent: #9333ea;
 }
 
 [data-color="orange"] {
   --brand-primary: #ea580c;
   --brand-secondary: #c2410c;
   --brand-tertiary: #fdba74;
+  --accent: #ea580c;
 }
 
 [data-color="pink"] {
   --brand-primary: #ec4899;
   --brand-secondary: #db2777;
   --brand-tertiary: #f9a8d4;
+  --accent: #ec4899;
 }
 
 [data-color="teal"] {
   --brand-primary: #14b8a6;
   --brand-secondary: #0d9488;
   --brand-tertiary: #99f6e4;
+  --accent: #14b8a6;
 }
 
 [data-color="gold"] {
   --brand-primary: #d4a843;
   --brand-secondary: #b8942e;
   --brand-tertiary: #f4d68c;
+  --accent: #d4a843;
 }
-
 /* =========================================
    TAILWIND / BODY STYLES
 ========================================= */

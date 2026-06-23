@@ -1,9 +1,31 @@
 /**
  * src/components/myAuth/AuthLayout.jsx
- * Centered full-page wrapper for auth forms.
- * Usage: Wrap LoginPage, RegisterPage, etc. with this.
+ *
+ * Works in TWO modes — same component, auto-detects which to use:
+ *
+ * MODE 1 — Layout Route (Outlet pattern, recommended):
+ *   <Route element={<AuthLayout />}>
+ *     <Route path="/login" element={<LoginForm />} />
+ *   </Route>
+ *
+ * MODE 2 — Wrapper (legacy, still works):
+ *   <AuthLayout>
+ *     <LoginForm />
+ *   </AuthLayout>
  */
+
+
+import { Outlet, useOutlet } from "react-router-dom";
+
 export default function AuthLayout({ children, showBranding = true }) {
+  const outlet = useOutlet();
+
+  // If used as a layout route (<Route element={<AuthLayout />}>),
+  // outlet will be the matched child route. Render that.
+  // If used as a wrapper (<AuthLayout><LoginForm /></AuthLayout>),
+  // outlet will be null. Render children instead.
+  const content = outlet ?? children;
+
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-center px-4 py-12"
@@ -12,12 +34,10 @@ export default function AuthLayout({ children, showBranding = true }) {
       {showBranding && (
         <div className="mb-8 text-center">
           {/* Replace with your actual logo */}
-          <div
-            className="inline-flex items-center gap-2 text-xl font-bold tracking-tight"
+          <div className="inline-flex items-center gap-2 text-xl font-bold tracking-tight"
             style={{ color: "var(--text-primary)" }}
           >
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black"
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black"
               style={{
                 background: "var(--brand-primary)",
                 color: "var(--brand-primary-foreground, #fff)",
@@ -30,24 +50,20 @@ export default function AuthLayout({ children, showBranding = true }) {
         </div>
       )}
 
-      <div className="w-full max-w-md">{children}</div>
+      <div className="w-full max-w-md">{content}</div>
 
       <p
         className="mt-8 text-xs text-center"
         style={{ color: "var(--muted)" }}
       >
         By continuing, you agree to our{" "}
-        <a
-          href="/terms"
-          className="underline underline-offset-2 hover:opacity-80"
+        <a href="/terms"  className="underline underline-offset-2 hover:opacity-80"
           style={{ color: "var(--text-secondary)" }}
         >
           Terms
         </a>{" "}
         and{" "}
-        <a
-          href="/privacy"
-          className="underline underline-offset-2 hover:opacity-80"
+        <a  href="/privacy" className="underline underline-offset-2 hover:opacity-80"
           style={{ color: "var(--text-secondary)" }}
         >
           Privacy Policy

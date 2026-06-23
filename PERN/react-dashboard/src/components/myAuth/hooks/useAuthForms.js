@@ -3,11 +3,10 @@
  * All auth mutations (login, register, OTP, forgot/reset password, logout).
  * Components call these hooks — never raw API functions directly.
  */
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { useQueryClient } from "@tanstack/react-query";
 
 import {
   loginApi,
@@ -17,7 +16,7 @@ import {
   logoutApi,
   forgotPasswordApi,
   resetPasswordApi,
-} from "@/api/user/authApi";
+} from "../../../api/user/authApi";
 import { setCredentials, clearCredentials, selectRefreshToken } from "../../../store/user";
 import { getDeviceInfo } from "../../../utils/deviceInfo";
 
@@ -43,17 +42,27 @@ export const useLogin = () => {
   });
 };
 
-/* ─── REGISTER ──────────────────────────────────────── */
+/* ─── REGISTER ──────────────────────────────────────────
+   variables is a FormData instance (may or may not contain
+   an "avatar" file). We read the email back out of it for
+   the OTP navigation state.
+────────────────────────────────────────────────────────── */
 export const useRegister = () => {
   const navigate = useNavigate();
 
   return useMutation({
-    mutationFn: registerApi,
+    mutationFn: registerApi,   // receives FormData from SignupForm
     onSuccess: (data, variables) => {
       toast.success(data?.message || "Account created! Check your email.");
-      // Pass email to OTP page via state
+
+      // variables is FormData — read email from it for the OTP page
+      const email =
+        variables instanceof FormData
+          ? variables.get("email")
+          : variables?.email;
+
       navigate("/verify-otp", {
-        state: { email: variables.email, purpose: "EMAIL_VERIFICATION" },
+        state: { email, purpose: "EMAIL_VERIFICATION" },
       });
     },
     onError: (error) => {
@@ -97,8 +106,8 @@ export const useResendOtp = () => {
 
 /* ─── LOGOUT ────────────────────────────────────────── */
 export const useLogout = () => {
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
+  const dispatch   = useDispatch();
+  const navigate   = useNavigate();
   const queryClient = useQueryClient();
   const refreshToken = useSelector(selectRefreshToken);
 
