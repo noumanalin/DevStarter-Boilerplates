@@ -14,9 +14,9 @@ import {
   getActiveSessionsApi,
   revokeSessionApi,
 } from "./userApi.js";
-import { updateUser } from "@/store/user";
+import { updateUser } from "../../store/user.js";
 import { logoutAllDevicesApi } from "./authApi.js";
-import { clearCredentials } from "@/store/user";
+import { clearCredentials } from "../../store/user.js";
 
 /* ─── QUERY KEYS ────────────────────────────────────── */
 export const USER_KEYS = {

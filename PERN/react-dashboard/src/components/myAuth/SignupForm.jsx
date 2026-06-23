@@ -7,7 +7,8 @@
  * - An ✕ button removes the chosen file
  */
 import { useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { Eye, EyeOff, User, Mail, Lock, Check, X } from "lucide-react";
 import {
   AuthCard, AuthHeader, AuthBody,
   AuthInput, AuthButton, AuthErrorBanner,
@@ -38,10 +39,11 @@ function PasswordStrengthBar({ strength }) {
   const colors = [
     "",
     "var(--error)",
-    "var(--warning, orange)",
-    "var(--brand-secondary, #16a34a)",
-    "var(--success, #15803d)",
+    "var(--warning, #f59e0b)",
+    "var(--info, #3b82f6)",
+    "var(--success, #22c55e)",
   ];
+  
   return (
     <div className="space-y-1">
       <div className="flex gap-1">
@@ -122,7 +124,7 @@ function AvatarPicker({ name, file, preview, onFileChange, onRemove }) {
               color: "#fff",
             }}
           >
-            ✕
+            <X className="w-3 h-3" />
           </button>
         )}
       </div>
@@ -154,6 +156,7 @@ export default function SignupForm() {
   const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "" });
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState("");
+  const navigate = useNavigate();
 
   // Avatar state
   const [avatarFile, setAvatarFile] = useState(null);    // File object
@@ -232,6 +235,15 @@ export default function SignupForm() {
     }
 
     register.mutate(formData, {
+      onSuccess: () => {
+        // Navigate to verify-otp page after successful registration
+        navigate("/verify-otp", {
+          state: {
+            email: form.email.trim(),
+            purpose: "EMAIL_VERIFICATION"
+          }
+        });
+      },
       onError: (err) => {
         setServerError(err?.response?.data?.message || "Registration failed.");
       },
@@ -274,6 +286,7 @@ export default function SignupForm() {
             error={errors.name}
             autoComplete="name"
             autoFocus
+            icon={<User className="w-4 h-4" />}
           />
           <AuthInput
             id="email"
@@ -284,6 +297,7 @@ export default function SignupForm() {
             onChange={set("email")}
             error={errors.email}
             autoComplete="email"
+            icon={<Mail className="w-4 h-4" />}
           />
           <div className="space-y-1">
             <AuthInput
@@ -295,6 +309,7 @@ export default function SignupForm() {
               onChange={set("password")}
               error={errors.password}
               autoComplete="new-password"
+              icon={<Lock className="w-4 h-4" />}
             />
             {form.password && <PasswordStrengthBar strength={strength} />}
           </div>
@@ -307,6 +322,7 @@ export default function SignupForm() {
             onChange={set("confirm")}
             error={errors.confirm}
             autoComplete="new-password"
+            icon={<Check className="w-4 h-4" />}
           />
 
           <AuthButton type="submit" loading={register.isPending}>

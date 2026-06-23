@@ -102,7 +102,7 @@ export const register = async (req, res) => {
   }
 };
 
-/* ─── VERIFY OTP ──────────────────────────────────────── */
+/* ─── VERIFY OTP ──────────────────────────────────────── */ 
 export const verifyOtp = async (req, res) => {
   try {
     const { email, otp } = req.body;
@@ -110,9 +110,6 @@ export const verifyOtp = async (req, res) => {
 
     const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (!user) return sendError(res, "User not found.", 404);
-
-    if (user.is_verified && user.otp_purpose === "EMAIL_VERIFICATION")
-      return sendError(res, "Email is already verified.", 400);
 
     if (user.otp_attempts >= 5)
       return sendError(res, "Too many failed attempts. Please request a new OTP.", 429);
@@ -130,16 +127,34 @@ export const verifyOtp = async (req, res) => {
       return sendError(res, "Invalid OTP. Please try again.", 400);
     }
 
-    await prisma.user.update({
-      where: { id: user.id },
-      data:  { is_verified: true, otp: null, otp_expires: null, otp_purpose: null, otp_attempts: 0 },
-    });
-
+    // Different handling based on purpose
     if (user.otp_purpose === "EMAIL_VERIFICATION") {
+      // For email verification: mark as verified and clear OTP
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { 
+          is_verified: true, 
+          otp: null, 
+          otp_expires: null, 
+          otp_purpose: null, 
+          otp_attempts: 0 
+        },
+      });
       await sendWelcomeEmail(normalizedEmail, user.name);
+      return sendSuccess(res, "Email verified successfully.");
+      
+    } else if (user.otp_purpose === "PASSWORD_RESET") {
+      // For password reset: DON'T clear OTP yet, just mark attempts reset
+      // The OTP will be cleared in the resetPassword function
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { otp_attempts: 0 },
+      });
+      return sendSuccess(res, "OTP verified. Please set your new password.");
     }
 
-    return sendSuccess(res, "Email verified successfully.");
+    return sendError(res, "Invalid OTP purpose.", 400);
+    
   } catch (err) {
     console.error("verifyOtp:", err);
     return sendError(res, "Verification failed. Please try again.", 500);

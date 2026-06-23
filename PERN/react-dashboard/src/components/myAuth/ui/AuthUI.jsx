@@ -3,6 +3,7 @@
  * Shared primitives used by all auth forms.
  * Uses only CSS variables — zero hardcoded colors.
  */
+import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 
 /* ─── AUTH CARD ─────────────────────────────────────── */
@@ -46,12 +47,14 @@ export function AuthBody({ children }) {
 }
 
 /* ─── AUTH INPUT ────────────────────────────────────── */
+/* ─── AUTH INPUT ────────────────────────────────────── */
 export function AuthInput({
   label,
   id,
   error,
   type = "text",
   className = "",
+  icon,
   ...props
 }) {
   const [showPassword, setShowPassword] = useState(false);
@@ -70,6 +73,11 @@ export function AuthInput({
         </label>
       )}
       <div className="relative">
+        {icon && (
+          <div className="absolute left-3 top-1/2 -translate-y-1/2">
+            {icon}
+          </div>
+        )}
         <input
           id={id}
           type={inputType}
@@ -78,6 +86,7 @@ export function AuthInput({
             background: "var(--background)",
             border: `1px solid ${error ? "var(--error)" : "var(--border)"}`,
             color: "var(--text-primary)",
+            paddingLeft: icon ? "2.5rem" : "0.75rem",
             boxShadow: "none",
           }}
           onFocus={(e) => {
@@ -98,11 +107,15 @@ export function AuthInput({
           <button
             type="button"
             onClick={() => setShowPassword((v) => !v)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs select-none"
+            className="absolute right-3 top-1/2 -translate-y-1/2"
             style={{ color: "var(--text-secondary)" }}
             tabIndex={-1}
           >
-            {showPassword ? "Hide" : "Show"}
+            {showPassword ? (
+              <EyeOff className="w-4 h-4" />
+            ) : (
+              <Eye className="w-4 h-4" />
+            )}
           </button>
         )}
       </div>

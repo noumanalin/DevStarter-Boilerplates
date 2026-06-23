@@ -1,7 +1,7 @@
 // My src/components/layout/DashBoardOutlet.jsx file is
 
 import { useEffect, useRef, useState } from "react";
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import {
     LayoutDashboard, FolderTree, Star, FileUser,
     Images, ClipboardPlus, Layers, UserPlus,
@@ -12,6 +12,9 @@ import {
 
 import ThemeToggle from "../functional/ThemeToggle";
 import ThemeColorPicker from "../functional/ThemeColorPicker";
+import UserButton from "../myAuth/UserButton";
+
+import { SITE_NAME } from "../../utils/info";
 
 /* ─────────────────────────────────────────────
    SIDEBAR NAV ITEMS (auth‑free)
@@ -151,7 +154,7 @@ const Sidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }) => {
         ${collapsed ? "w-[70px]" : "w-[240px]"}
       `}
         >
-            <div className="h-16 flex items-center px-4 border-b border-[var(--border)] shrink-0 overflow-hidden">
+            <Link to='/' className="h-16 flex items-center px-4 border-b border-[var(--border)] shrink-0 overflow-hidden">
                 {!collapsed && (
                     <span className="font-bold text-lg text-[var(--brand-primary)] whitespace-nowrap">
                         Logo
@@ -160,7 +163,7 @@ const Sidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }) => {
                 {collapsed && (
                     <span className="font-bold text-lg text-[var(--brand-primary)] mx-auto">L</span>
                 )}
-            </div>
+            </Link>
 
             <nav className="flex-1 py-4 overflow-y-auto overflow-x-hidden">
                 <ul className="space-y-1 px-2">
@@ -243,7 +246,7 @@ const Sidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }) => {
                     <div className="relative w-[240px] h-full shrink-0">
                         <aside className="h-full flex flex-col bg-[var(--surface)] border-r border-[var(--border)] w-[240px]">
                             <div className="h-16 flex items-center justify-between px-4 border-b border-[var(--border)] shrink-0">
-                                <span className="font-bold text-lg text-[var(--brand-primary)]">Nexora</span>
+                                <span className="font-bold text-lg text-[var(--brand-primary)]">{SITE_NAME}</span>
                                 <button
                                     onClick={onMobileClose}
                                     aria-label="Close sidebar"
@@ -317,7 +320,7 @@ const Navbar = ({ onMobileMenuClick }) => {
                 <ThemeToggle />
                 <ThemeColorPicker />
                 <div className="w-px h-8 bg-[var(--border)] mx-1" />
-                <UserDropdown />
+                <UserButton/>
             </div>
         </header>
     );

@@ -2,7 +2,8 @@
  * src/components/myAuth/LoginForm.jsx
  */
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import {
   AuthCard, AuthHeader, AuthBody,
   AuthInput, AuthButton, AuthLink, AuthErrorBanner,
@@ -13,6 +14,7 @@ export default function LoginForm() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState("");
+  const navigate = useNavigate();
 
   const login = useLogin();
 
@@ -33,7 +35,19 @@ export default function LoginForm() {
 
     login.mutate(form, {
       onError: (err) => {
-        setServerError(err?.response?.data?.message || "Login failed.");
+        const message = err?.response?.data?.message || "Login failed.";
+        setServerError(message);
+        
+        // Check if the error is about email verification
+        if (message.includes("verify your email")) {
+          // Navigate to verify-otp page with email
+          navigate("/verify-otp", { 
+            state: { 
+              email: form.email, 
+              purpose: "EMAIL_VERIFICATION" 
+            } 
+          });
+        }
       },
     });
   };
@@ -63,6 +77,7 @@ export default function LoginForm() {
             error={errors.email}
             autoComplete="email"
             autoFocus
+            icon={<Mail className="w-4 h-4" />}
           />
           <div className="space-y-1">
             <div className="flex items-center justify-between">
@@ -89,6 +104,7 @@ export default function LoginForm() {
               onChange={set("password")}
               error={errors.password}
               autoComplete="current-password"
+              icon={<Lock className="w-4 h-4" />}
             />
           </div>
 

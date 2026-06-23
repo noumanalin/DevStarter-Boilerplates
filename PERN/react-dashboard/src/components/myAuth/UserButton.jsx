@@ -53,13 +53,9 @@ export default function UserButton({ size = 36, links = [] }) {
     <div className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 rounded-full transition-all outline-none"
-        style={{
-          padding: 2,
-          border: open
-            ? "2px solid var(--brand-primary)"
-            : "2px solid transparent",
-        }}
+        className="flex items-center gap-2 p-1 rounded-full transition-all outline-none cursor-pointer
+        border border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] hover:border-[var(--brand-primary)] hover:bg-[var(--surface-hover)]"
+       
         aria-label="Open user menu"
         aria-expanded={open}
         aria-haspopup="menu"

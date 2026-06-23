@@ -7,11 +7,11 @@ import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   AuthCard, AuthHeader, AuthBody,
-  AuthButton, AuthLink, AuthErrorBanner, OtpInputGroup,
+  AuthButton, AuthLink, AuthErrorBanner, OtpInputGroup, Spinner,
 } from "./ui/AuthUI";
 import { useVerifyOtp, useResendOtp } from "./hooks/useAuthForms";
 
-const RESEND_COOLDOWN = 60;
+const RESEND_COOLDOWN = 180; // 3 minutes
 
 export default function VerifyOtpForm() {
   const location = useLocation();
@@ -68,11 +68,30 @@ export default function VerifyOtpForm() {
 
   const handleResend = () => {
     if (cooldown > 0) return;
-    resendOtp.mutate({ email, purpose });
-    setCooldown(RESEND_COOLDOWN);
+    
+    resendOtp.mutate(
+      { email, purpose },
+      {
+        onSuccess: () => {
+          // Start cooldown only after successful API response
+          setCooldown(RESEND_COOLDOWN);
+          setServerError("");
+        },
+        onError: (err) => {
+          setServerError(err?.response?.data?.message || "Failed to resend OTP. Please try again.");
+        },
+      }
+    );
   };
 
   const isEmailVerification = purpose === "EMAIL_VERIFICATION";
+
+  // Format cooldown time to MM:SS
+  const formatCooldown = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   return (
     <AuthCard>
@@ -115,14 +134,21 @@ export default function VerifyOtpForm() {
             Didn't receive a code?{" "}
             {cooldown > 0 ? (
               <span style={{ color: "var(--muted)" }}>
-                Resend in {cooldown}s
+                Resend in {formatCooldown(cooldown)}
               </span>
             ) : (
               <AuthLink
                 onClick={handleResend}
                 disabled={resendOtp.isPending}
               >
-                {resendOtp.isPending ? "Sending…" : "Resend code"}
+                {resendOtp.isPending ? (
+                  <span className="inline-flex items-center gap-1.5">
+                    <Spinner size={14} />
+                    Resending...
+                  </span>
+                ) : (
+                  "Resend code"
+                )}
               </AuthLink>
             )}
           </p>

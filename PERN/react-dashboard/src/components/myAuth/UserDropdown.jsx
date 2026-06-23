@@ -6,7 +6,7 @@
 import { useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { selectUser, selectUserRole } from "@/store/user";
+import { selectUser, selectUserRole } from "../../store/user";
 import { useLogout } from "./hooks/useAuthForms";
 import UserAvatar from "./UserAvatar";
 
@@ -117,8 +117,8 @@ export default function UserDropdown({ onClose, links = [] }) {
         <button
           onClick={handleLogout}
           disabled={logout.isPending}
-          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors text-left"
-          style={{ color: "var(--error)" }}
+          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors text-left text-red-800"
+          style={{ color: "var(--danger)" }}
           onMouseEnter={(e) => {
             e.currentTarget.style.background =
               "color-mix(in srgb, var(--error) 8%, transparent)";
@@ -129,7 +129,7 @@ export default function UserDropdown({ onClose, links = [] }) {
           role="menuitem"
         >
           <LogoutIcon />
-          {logout.isPending ? "Signing out…" : "Sign out"}
+          {logout.isPending ? "Signing out…" : "Logout"}
         </button>
       </div>
     </div>

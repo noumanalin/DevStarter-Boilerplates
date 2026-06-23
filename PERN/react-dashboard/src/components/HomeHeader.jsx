@@ -2,6 +2,13 @@ import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import ThemeToggle from "./functional/ThemeToggle";
 import ThemeColorPicker from "./functional/ThemeColorPicker";
+import UserButton from "./myAuth/UserButton";
+import SessionManager from "./myAuth/SessionManager";
+import UserAvatar from "./myAuth/UserAvatar";
+import LoginHistory from "./myAuth/LoginHistory";
+import { LayoutDashboard } from "lucide-react";
+import { useSelector } from "react-redux";
+
 
 const HomeHeader = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -9,6 +16,9 @@ const HomeHeader = () => {
   const location = useLocation();
   const menuRef = useRef(null);
   const buttonRef = useRef(null);
+
+  const { user, isAuthenticated } = useSelector((state) => state?.user)
+  const showUserButton = user?.email && isAuthenticated === true;
 
   useEffect(() => {
     setMounted(true);
@@ -97,6 +107,7 @@ const HomeHeader = () => {
               MyApp
             </span>
           </div>
+
         </Link>
 
         {/* Desktop Navigation */}
@@ -111,11 +122,10 @@ const HomeHeader = () => {
                 <Link
                   to={item.href}
                   role="menuitem"
-                  className={`relative px-4 py-2 text-sm font-medium rounded-full transition-all duration-200 hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-2 ${
-                    isActive
-                      ? "text-[var(--brand-primary)]"
-                      : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                  }`}
+                  className={`relative px-4 py-2 text-sm font-medium rounded-full transition-all duration-200 hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-2 ${isActive
+                    ? "text-[var(--brand-primary)]"
+                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                    }`}
                   aria-current={isActive ? "page" : undefined}
                 >
                   {item.name}
@@ -141,17 +151,29 @@ const HomeHeader = () => {
           <ThemeToggle />
           <ThemeColorPicker />
 
-          <Link
-            to="/register"
-            className="hidden sm:inline-flex items-center justify-center px-4 py-2 text-sm font-semibold text-white rounded-full transition-all duration-200 hover:scale-105 hover:shadow-lg active:scale-95 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-2"
-            style={{
-              background: "var(--brand-primary)",
-              boxShadow: "0 2px 12px rgba(37,99,235,0.3)",
-            }}
-            aria-label="Get started"
-          >
-            Get Started
-          </Link>
+          {showUserButton ?
+            <UserButton
+              links={[
+                { to: "/dashboard", label: "Dashboard", icon: <LayoutDashboard /> },
+              ]} />
+            :
+            <Link
+              to="/login"
+              className="hidden sm:inline-flex items-center justify-center px-4 py-2 text-sm font-semibold text-white rounded-full transition-all duration-200 hover:scale-105 hover:shadow-lg active:scale-95 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-2"
+              style={{
+                background: "var(--brand-primary)",
+                boxShadow: "0 2px 12px rgba(37,99,235,0.3)",
+              }}
+              aria-label="Get started"
+            >
+              Get Started
+            </Link>
+          }
+
+
+
+
+
 
           {/* Mobile Menu Button */}
           <button
@@ -164,19 +186,16 @@ const HomeHeader = () => {
             aria-haspopup="true"
           >
             <span
-              className={`w-6 h-0.5 bg-[var(--text-primary)] rounded-full transition-all duration-300 ${
-                isOpen ? "rotate-45 translate-y-1.5" : ""
-              }`}
+              className={`w-6 h-0.5 bg-[var(--text-primary)] rounded-full transition-all duration-300 ${isOpen ? "rotate-45 translate-y-1.5" : ""
+                }`}
             />
             <span
-              className={`w-6 h-0.5 bg-[var(--text-primary)] rounded-full transition-all duration-300 ${
-                isOpen ? "opacity-0" : ""
-              }`}
+              className={`w-6 h-0.5 bg-[var(--text-primary)] rounded-full transition-all duration-300 ${isOpen ? "opacity-0" : ""
+                }`}
             />
             <span
-              className={`w-6 h-0.5 bg-[var(--text-primary)] rounded-full transition-all duration-300 ${
-                isOpen ? "-rotate-45 -translate-y-1.5" : ""
-              }`}
+              className={`w-6 h-0.5 bg-[var(--text-primary)] rounded-full transition-all duration-300 ${isOpen ? "-rotate-45 -translate-y-1.5" : ""
+                }`}
             />
           </button>
         </div>
@@ -203,11 +222,10 @@ const HomeHeader = () => {
                   <Link
                     to={item.href}
                     role="menuitem"
-                    className={`block px-4 py-3 text-base font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] ${
-                      isActive
-                        ? "text-[var(--brand-primary)] bg-[var(--surface-hover)]"
-                        : "text-[var(--text-primary)] hover:bg-[var(--surface-hover)]"
-                    }`}
+                    className={`block px-4 py-3 text-base font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] ${isActive
+                      ? "text-[var(--brand-primary)] bg-[var(--surface-hover)]"
+                      : "text-[var(--text-primary)] hover:bg-[var(--surface-hover)]"
+                      }`}
                     onClick={closeMenu}
                     aria-current={isActive ? "page" : undefined}
                   >
@@ -239,6 +257,9 @@ const HomeHeader = () => {
             >
               Get Started
             </Link>
+
+
+
           </div>
         </div>
       )}
