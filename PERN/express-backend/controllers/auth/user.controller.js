@@ -10,6 +10,11 @@ import {
   sendOtpEmail, sendWelcomeEmail,
   sendPasswordChangedEmail,
 } from "../../services/emailNotifications.js";
+import {
+  uploadToCloudinary,
+  getResourceType,
+  getUploadFormat,
+} from "../../config/cloudinary.js";
 
 /* ─── helpers ──────────────────────────────────────────── */
 const buildSessionPayload = (req, body, userId) => {

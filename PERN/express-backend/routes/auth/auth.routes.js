@@ -8,6 +8,7 @@ import {
   register, verifyOtp, resendOtp, login,
   refreshAccessToken, logout, logoutAllDevices,
   forgotPassword, resetPassword,
+  changePassword,
 } from "../../controllers/auth/auth.controller.js";
 
 const router = express.Router();
@@ -22,5 +23,6 @@ router.post("/logout",          logout);
 router.post("/logout-all",      isLoggedIn(),                                                      logoutAllDevices);
 router.post("/forgot-password", otpRateLimiter,  validateBody("email"),                           forgotPassword);
 router.post("/reset-password",  otpRateLimiter,  validateBody("email", "otp", "newPassword"),     resetPassword);
+router.post("/change-password", isLoggedIn(), authRateLimiter, validateBody("currentPassword", "newPassword"), changePassword );
 
 export default router;

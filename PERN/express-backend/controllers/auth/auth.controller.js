@@ -102,7 +102,7 @@ export const register = async (req, res) => {
   }
 };
 
-/* ─── VERIFY OTP ──────────────────────────────────────── */ 
+/* ─── VERIFY OTP ──────────────────────────────────────── */
 export const verifyOtp = async (req, res) => {
   try {
     const { email, otp } = req.body;
@@ -110,6 +110,9 @@ export const verifyOtp = async (req, res) => {
 
     const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (!user) return sendError(res, "User not found.", 404);
+
+    if (user.is_verified && user.otp_purpose === "EMAIL_VERIFICATION")
+      return sendError(res, "Email is already verified.", 400);
 
     if (user.otp_attempts >= 5)
       return sendError(res, "Too many failed attempts. Please request a new OTP.", 429);
@@ -127,34 +130,16 @@ export const verifyOtp = async (req, res) => {
       return sendError(res, "Invalid OTP. Please try again.", 400);
     }
 
-    // Different handling based on purpose
+    await prisma.user.update({
+      where: { id: user.id },
+      data:  { is_verified: true, otp: null, otp_expires: null, otp_purpose: null, otp_attempts: 0 },
+    });
+
     if (user.otp_purpose === "EMAIL_VERIFICATION") {
-      // For email verification: mark as verified and clear OTP
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { 
-          is_verified: true, 
-          otp: null, 
-          otp_expires: null, 
-          otp_purpose: null, 
-          otp_attempts: 0 
-        },
-      });
       await sendWelcomeEmail(normalizedEmail, user.name);
-      return sendSuccess(res, "Email verified successfully.");
-      
-    } else if (user.otp_purpose === "PASSWORD_RESET") {
-      // For password reset: DON'T clear OTP yet, just mark attempts reset
-      // The OTP will be cleared in the resetPassword function
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { otp_attempts: 0 },
-      });
-      return sendSuccess(res, "OTP verified. Please set your new password.");
     }
 
-    return sendError(res, "Invalid OTP purpose.", 400);
-    
+    return sendSuccess(res, "Email verified successfully.");
   } catch (err) {
     console.error("verifyOtp:", err);
     return sendError(res, "Verification failed. Please try again.", 500);
@@ -215,13 +200,14 @@ export const login = async (req, res) => {
     const rawRefreshToken    = generateRefreshToken();
     const hashedRefreshToken = hashToken(rawRefreshToken);
 
-    const sessionBase      = buildSessionPayload(req, req.body, user.id);
-    const historyPayload   = buildLoginHistoryPayload(req, req.body, user.id);
+    const sessionBase    = buildSessionPayload(req, req.body, user.id);
+    const historyPayload = buildLoginHistoryPayload(req, req.body, user.id);
+    const now            = new Date();
 
-    await prisma.$transaction([
+    const [session] = await prisma.$transaction([
       prisma.session.create({ data: { ...sessionBase, refreshToken: hashedRefreshToken } }),
       prisma.loginHistory.create({ data: historyPayload }),
-      prisma.user.update({ where: { id: user.id }, data: { last_login_at: new Date() } }),
+      prisma.user.update({ where: { id: user.id }, data: { last_login_at: now } }),
     ]);
 
     return sendSuccess(res, "Logged in successfully.", {
@@ -229,11 +215,19 @@ export const login = async (req, res) => {
         accessToken,
         refreshToken: rawRefreshToken,
         user: {
-          id:         user.id,
-          name:       user.name,
-          email:      user.email,
-          role:       user.role,
-          avatar_url: user.avatar_url,
+          id:            user.id,
+          name:          user.name,
+          email:         user.email,
+          role:          user.role,
+          avatar_url:    user.avatar_url,
+          last_login_at: user.last_login_at, // previous login time (before this login)
+        },
+        session: {
+          id:         session.id,
+          deviceType: session.deviceType,
+          ipAddress:  session.ipAddress,
+          createdAt:  session.createdAt,
+          expiresAt:  session.expiresAt,
         },
       },
     });
@@ -380,5 +374,37 @@ export const resetPassword = async (req, res) => {
   } catch (err) {
     console.error("resetPassword:", err);
     return sendError(res, "Password reset failed. Please try again.", 500);
+  }
+};
+
+
+/* ─── CHANGE PASSWORD (authenticated) ─────────────────── */
+export const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user.id;
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return sendError(res, "User not found.", 404);
+
+    const passwordMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!passwordMatch) return sendError(res, "Current password is incorrect.", 401);
+
+    if (currentPassword === newPassword)
+      return sendError(res, "New password must be different from your current password.", 400);
+
+    const hashed = await bcrypt.hash(newPassword, 12);
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: hashed },
+    });
+
+    await sendPasswordChangedEmail(user.email, user.name);
+
+    return sendSuccess(res, "Password updated successfully.");
+  } catch (err) {
+    console.error("changePassword:", err);
+    return sendError(res, "Failed to update password. Please try again.", 500);
   }
 };

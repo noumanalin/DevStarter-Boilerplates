@@ -25,6 +25,7 @@ import PageNotFoundDB from "./pages/PageNotFoundDB";
 import PageNotFound from "./pages/PageNotFound";
 import HomePage from "./pages/HomePage";
 import HomeHeader from "./components/HomeHeader";
+import DashboardHome from "./pages/Dashboard/DashboardHome";
 
 const App = () => {
   const { pathname } = useLocation();
@@ -55,7 +56,7 @@ const App = () => {
         {/* Protected Dashboard Routes - Only these require authentication */}
         <Route  element={<ProtectedRoute />}>
           <Route element={<DashBoardOutlet />}>
-            <Route path="/dashboard" element={<>{"Dashboard Home"}</>} />
+            <Route path="/dashboard" element={<DashboardHome/>} />
 
             {/* Admin/Super Admin only routes */}
             <Route element={<RoleGuard roles={["ADMIN", "SUPER_ADMIN"]} fallback={<p>You need Super Admin / Admin access.</p>} />}>

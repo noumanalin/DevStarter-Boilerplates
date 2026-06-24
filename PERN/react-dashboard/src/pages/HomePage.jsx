@@ -187,14 +187,16 @@ const HomePage = () => {
       >
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           {/* Copyright */}
-         <article>
            <p 
             className="text-sm text-center sm:text-left mb-2"
             style={{ color: "var(--text-secondary)" }}
           >
             &copy; {currentYear} {SITE_NAME || "MyApp"}. All rights reserved.
           </p>
-           <p 
+
+
+          {/* Made with love and social links */}
+         <p 
               className="text-sm"
               style={{ color: "var(--text-secondary)" }}
             >
@@ -211,38 +213,9 @@ const HomePage = () => {
                 style={{ color: "var(--brand-primary)" }}
                 aria-label="Visit Nouman Ali's LinkedIn profile"
               >
-                Nouman Ali
+                me
               </a>
             </p>
-         </article>
-
-
-          {/* Made with love and social links */}
-          <div className="flex flex-col items-center gap-3">
-           
-            {/* Social Links with Images */}
-            <div className="flex items-center gap-3" role="group" aria-label="Social media links">
-              {socialLinks?.map((social) => (
-                <a
-                  key={social?.name}
-                  href={social?.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={social?.name}
-                  className="transition-transform duration-300 hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-2 rounded-lg"
-                >
-                  <img
-                    src={social?.img}
-                    alt={social?.name}
-                    width={38}
-                    height={38}
-                    loading="lazy"
-                    className="h-10 w-10 object-contain"
-                  />
-                </a>
-              ))}
-            </div>
-          </div>
         </div>
       </footer>
     </>

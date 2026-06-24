@@ -65,3 +65,11 @@ export const resetPasswordApi = async (data) => {
   const response = await api.post("auth/reset-password", data);
   return response?.data;
 };
+
+
+// -- Change Password -----------------
+export const changePasswordApi = async (data) => {
+  // data: { currentPassword, newPassword }
+  const response = await api.post("auth/change-password", data);
+  return response?.data;
+};

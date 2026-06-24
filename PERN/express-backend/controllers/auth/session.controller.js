@@ -1,3 +1,4 @@
+// controllers/auth/session.controller.js
 import { prisma } from "../../config/db.js";
 import { sendSuccess, sendError } from "../../utils/helper.js";
 
@@ -5,11 +6,15 @@ import { sendSuccess, sendError } from "../../utils/helper.js";
 export const getActiveSessions = async (req, res) => {
   try {
     const sessions = await prisma.session.findMany({
-      where: { userId: req.user.id, expiresAt: { gt: new Date() } },
+      where:   { userId: req.user.id, expiresAt: { gt: new Date() } },
       orderBy: { createdAt: "desc" },
       select: {
-        id: true, ipAddress: true, userAgent: true,
-        deviceType: true, createdAt: true, expiresAt: true,
+        id:         true,
+        ipAddress:  true,
+        userAgent:  true,
+        deviceType: true,
+        createdAt:  true,
+        expiresAt:  true,
       },
     });
 
@@ -26,7 +31,8 @@ export const revokeSession = async (req, res) => {
     const session = await prisma.session.findUnique({ where: { id: req.params.id } });
 
     if (!session) return sendError(res, "Session not found.", 404);
-    if (session.userId !== req.user.id) return sendError(res, "You do not have permission to revoke this session.", 403);
+    if (session.userId !== req.user.id)
+      return sendError(res, "You do not have permission to revoke this session.", 403);
 
     await prisma.session.delete({ where: { id: req.params.id } });
 

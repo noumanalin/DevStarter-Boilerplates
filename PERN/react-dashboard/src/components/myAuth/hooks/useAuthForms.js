@@ -16,6 +16,7 @@ import {
   logoutApi,
   forgotPasswordApi,
   resetPasswordApi,
+  changePasswordApi,
 } from "../../../api/user/authApi";
 import { setCredentials, clearCredentials, selectRefreshToken } from "../../../store/user";
 import { getDeviceInfo } from "../../../utils/deviceInfo";
@@ -157,6 +158,25 @@ export const useResetPassword = () => {
     },
     onError: (error) => {
       toast.error(error?.response?.data?.message || "Reset failed. Try again.");
+    },
+  });
+};
+
+
+/* ─── CHANGE PASSWORD (logged-in user) ─────────────────
+   Distinct from forgotPassword/resetPassword above: this is
+   for an authenticated user who already knows their password
+   and just wants to rotate it — no OTP round-trip needed.
+────────────────────────────────────────────────────────── */
+export const useChangePassword = ({ onSuccess: onSuccessCb } = {}) => {
+  return useMutation({
+    mutationFn: changePasswordApi,
+    onSuccess: (data) => {
+      toast.success(data?.message || "Password updated successfully.");
+      onSuccessCb?.(data);
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Failed to update password.");
     },
   });
 };

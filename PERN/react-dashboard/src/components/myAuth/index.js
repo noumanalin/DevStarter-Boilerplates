@@ -20,6 +20,8 @@ export { default as ResetPasswordForm } from "./ResetPasswordForm";
 export { default as UserAvatar } from "./UserAvatar";
 export { default as UserButton } from "./UserButton";
 export { default as UserDropdown } from "./UserDropdown";
+export { default as UserPanel  } from "./UserPanel";   // inline Clerk-style account panel
+
 
 // ── Guards / Routing ──────────────────────────────────
 export { default as AuthProvider } from "./AuthProvider";
