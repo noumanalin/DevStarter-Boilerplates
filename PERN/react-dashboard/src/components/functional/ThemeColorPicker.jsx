@@ -134,7 +134,7 @@ const ThemeColorPicker = () => {
                     role="menu"
                     aria-label="Pick a theme color"
                     onKeyDown={handleMenuKeyDown}
-                    className="absolute right-[-80px] mt-2 py-2 w-56 bg-[var(--background)] border border-[var(--border)] rounded-lg shadow-lg z-50"
+                    className="absolute right-[-80px] mt-2 py-2 w-56 bg-[var(--background)] border border-[var(--border)] rounded-lg shadow-lg z-[999]"
                 >
                     <div
                         className="px-3 pb-2 text-xs font-medium uppercase tracking-wider"

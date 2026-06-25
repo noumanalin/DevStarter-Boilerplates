@@ -410,14 +410,20 @@ export const updateProfile = async (req, res) => {
 export const getLoginHistory = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { limit = 50, offset = 0 } = req.query;
+    const MAX_LIMIT = 8;
+
+    const requestedLimit = parseInt(req.query.limit, 10);
+    const limit = Number.isFinite(requestedLimit)
+      ? Math.min(Math.max(requestedLimit, 1), MAX_LIMIT)
+      : MAX_LIMIT;
+    const offset = parseInt(req.query.offset, 10) || 0;
 
     const [logins, total] = await Promise.all([
       prisma.loginHistory.findMany({
         where: { userId },
-        orderBy: { created_at: 'desc' },
-        take: parseInt(limit),
-        skip: parseInt(offset),
+        orderBy: { created_at: "desc" },
+        take: limit,
+        skip: offset,
         select: {
           id: true,
           ipAddress: true,
@@ -433,11 +439,7 @@ export const getLoginHistory = async (req, res) => {
 
     return sendSuccess(res, "Login history retrieved successfully.", {
       data: logins,
-      pagination: {
-        total,
-        limit: parseInt(limit),
-        offset: parseInt(offset),
-      },
+      pagination: { total, limit, offset },
     });
   } catch (err) {
     console.error("getLoginHistory:", err);

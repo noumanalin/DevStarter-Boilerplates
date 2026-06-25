@@ -1,8 +1,89 @@
-// src/compnents/myAuth/ui/icons.jsx
+// src/components/myAuth/ui/icons.jsx
 import React from 'react';
 
 // Helper to combine classes for dark/light mode
 const iconClasses = "w-5 h-5 text-gray-700 dark:text-gray-300";
+
+// ============================================
+// X ICON - Server-side safe (no forwardRef)
+// ============================================
+export const X = ({ 
+  className = "w-5 h-5",
+  stroke = "currentColor",
+  strokeWidth = 2,
+  ...props 
+}) => (
+  <svg 
+    fill="none" 
+    viewBox="0 0 24 24" 
+    className={className}
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <line 
+      x1="19" 
+      y1="19" 
+      x2="5" 
+      y2="5" 
+      stroke={stroke} 
+      strokeLinecap="round" 
+      strokeLinejoin="round" 
+      strokeWidth={strokeWidth}
+    />
+    <line 
+      x1="19" 
+      y1="5" 
+      x2="5" 
+      y2="19" 
+      stroke={stroke} 
+      strokeLinecap="round" 
+      strokeLinejoin="round" 
+      strokeWidth={strokeWidth}
+    />
+  </svg>
+);
+
+// ============================================
+// REFRESH ICON with animate-spin support
+// ============================================
+export const RefreshIcon = ({ 
+  className = "w-4 h-4",
+  stroke = "currentColor",
+  strokeWidth = 2,
+  spinning = false,
+  ...props 
+}) => (
+  <svg 
+    viewBox="0 0 32 32" 
+    className={`${className} ${spinning ? 'animate-spin' : ''}`}
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path 
+      fill="none" 
+      stroke={stroke} 
+      strokeWidth={strokeWidth} 
+      strokeMiterlimit="10" 
+      d="M25.7 10.9C23.9 7.4 20.2 5 16 5c-4.7 0-8.6 2.9-10.2 7m.4 9c1.8 3.5 5.5 6 9.8 6 4.7 0 8.6-2.9 10.2-7"
+    />
+    <path 
+      fill="none" 
+      stroke={stroke} 
+      strokeWidth={strokeWidth} 
+      strokeMiterlimit="10" 
+      d="M26 5v6h-6M6 27v-6h6"
+    />
+  </svg>
+);
+
+// ============================================
+// CLOSE ICON (alias for X)
+// ============================================
+export const CloseIcon = X;
+
+// ============================================
+// DEVICE ICONS
+// ============================================
 
 // 1. Desktop Device Icon
 export const DesktopIcon = ({ className = iconClasses, ...props }) => (
@@ -38,6 +119,10 @@ export const MobileIcon = ({ className = iconClasses, ...props }) => (
         <path fillRule="evenodd" d="M715.3 81.2a.3.3 0 0 0-.2-.4.3.3 0 1 0-.2.6.3.3 0 0 0 .4-.2Zm-5.1-.2c0 .2 0 .3.2.3h2.9a.3.3 0 0 0 .2-.3.3.3 0 0 0-.2-.2h-2.9a.3.3 0 0 0-.2.2Z" clipRule="evenodd" fill="currentColor" opacity="0.8" />
     </svg>
 );
+
+// ============================================
+// BROWSER ICONS
+// ============================================
 
 // 3. Chrome Browser
 export const ChromeIcon = ({ className = iconClasses, ...props }) => (
@@ -185,8 +270,6 @@ export const OperaIcon = ({ className = iconClasses, ...props }) => (
 export const GlobeIcon = ({ className = iconClasses, ...props }) => (
     <svg
         xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -201,6 +284,7 @@ export const GlobeIcon = ({ className = iconClasses, ...props }) => (
         <path d="M2 12h20" />
     </svg>
 );
+
 // ============================================
 // OS ICONS
 // ============================================
@@ -271,11 +355,143 @@ export const AndroidIcon = ({ className = iconClasses, ...props }) => (
         className={className}
         {...props}
         fill="currentColor" data-name="Layer 1">
-        <path d="M14.97535,3.01886l.95982-1.73159a.19342.19342,0,0,0-.33833-.18756l-.97045,1.75078a6.54141,6.54141,0,0,0-5.25275,0L8.40316,1.09971a.19342.19342,0,0,0-.33833.18756l.95985,1.7316A5.54614,5.54614,0,0,0,5.93152,7.89522h12.137A5.54615,5.54615,0,0,0,14.97535,3.01886ZM9.19911,5.67446a.5068.5068,0,1,1,.5068-.5068A.50737.50737,0,0,1,9.19911,5.67446Zm5.60178,0a.5068.5068,0,1,1,.5068-.5068A.50737.50737,0,0,1,14.80089,5.67446Zm-8.86946,11.497a1.46713,1.46713,0,0,0,1.46713,1.46713h.9736v3.00095a1.36046,1.36046,0,1,0,2.72091,0V18.63859h1.81386v3.00095a1.36046,1.36046,0,1,0,2.72091,0V18.63859h.97364a1.46713,1.46713,0,0,0,1.46713-1.46713V8.37532H5.93143ZM4.06415,8.14191A1.362,1.362,0,0,0,2.7037,9.50237v5.66846a1.36046,1.36046,0,1,0,2.72091,0V9.50237A1.362,1.362,0,0,0,4.06415,8.14191Zm15.8717,0a1.362,1.362,0,0,0-1.36046,1.36046v5.66846a1.36046,1.36046,0,1,0,2.72091,0V9.50237A1.362,1.362,0,0,0,19.93585,8.14191Z" /></svg>
-)
+        <path d="M14.97535,3.01886l.95982-1.73159a.19342.19342,0,0,0-.33833-.18756l-.97045,1.75078a6.54141,6.54141,0,0,0-5.25275,0L8.40316,1.09971a.19342.19342,0,0,0-.33833.18756l.95985,1.7316A5.54614,5.54614,0,0,0,5.93152,7.89522h12.137A5.54615,5.54615,0,0,0,14.97535,3.01886ZM9.19911,5.67446a.5068.5068,0,1,1,.5068-.5068A.50737.50737,0,0,1,9.19911,5.67446Zm5.60178,0a.5068.5068,0,1,1,.5068-.5068A.50737.50737,0,0,1,14.80089,5.67446Zm-8.86946,11.497a1.46713,1.46713,0,0,0,1.46713,1.46713h.9736v3.00095a1.36046,1.36046,0,1,0,2.72091,0V18.63859h1.81386v3.00095a1.36046,1.36046,0,1,0,2.72091,0V18.63859h.97364a1.46713,1.46713,0,0,0,1.46713-1.46713V8.37532H5.93143ZM4.06415,8.14191A1.362,1.362,0,0,0,2.7037,9.50237v5.66846a1.36046,1.36046,0,1,0,2.72091,0V9.50237A1.362,1.362,0,0,0,4.06415,8.14191Zm15.8717,0a1.362,1.362,0,0,0-1.36046,1.36046v5.66846a1.36046,1.36046,0,1,0,2.72091,0V9.50237A1.362,1.362,0,0,0,19.93585,8.14191Z" />
+    </svg>
+);
 
-// Updated default export with all icons
+// ============================================
+// UI ICONS
+// ============================================
+
+export const LogoutIcon = ({ className = "w-4 h-4", ...props }) => (
+    <svg 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        stroke="currentColor"
+        strokeWidth="2" 
+        strokeLinecap="round" 
+        strokeLinejoin="round"
+        className={className}
+        {...props}
+    >
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+        <polyline points="16 17 21 12 16 7" />
+        <line x1="21" y1="12" x2="9" y2="12" />
+    </svg>
+);
+
+export const PencilIcon = ({ className = "w-4 h-4", ...props }) => (
+    <svg 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        stroke="currentColor" 
+        strokeWidth="2"
+        strokeLinecap="round" 
+        strokeLinejoin="round" 
+        className={className}
+        {...props}
+    >
+        <path d="M12 20h9" />
+        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
+);
+
+export const EyeIcon = ({ className = "w-4 h-4", ...props }) => (
+    <svg 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        stroke="currentColor"
+        strokeWidth="2" 
+        strokeLinecap="round" 
+        strokeLinejoin="round"
+        className={className}
+        {...props}
+    >
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z" />
+        <circle cx="12" cy="12" r="3" />
+    </svg>
+);
+
+export const EyeOffIcon = ({ className = "w-4 h-4", ...props }) => (
+    <svg 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        stroke="currentColor"
+        strokeWidth="2" 
+        strokeLinecap="round" 
+        strokeLinejoin="round"
+        className={className}
+        {...props}
+    >
+        <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a18.5 18.5 0 0 1 4.22-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+        <line x1="1" y1="1" x2="23" y2="23" />
+    </svg>
+);
+
+export const DeviceIcon = ({ type, className = "w-4 h-4", ...props }) => {
+    const Icon = type === "MOBILE" || type === "TABLET" ? MobileIcon : DesktopIcon;
+    return <Icon className={className} {...props} />;
+};
+
+export const IpIcon = ({ className = "w-4 h-4", ...props }) => (
+    <svg 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        stroke="currentColor"
+        strokeWidth="2" 
+        strokeLinecap="round" 
+        strokeLinejoin="round"
+        className={className}
+        {...props}
+    >
+        <circle cx="12" cy="12" r="10" />
+        <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+    </svg>
+);
+
+export const ScreenIcon = ({ className = "w-4 h-4", ...props }) => (
+    <svg 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        stroke="currentColor"
+        strokeWidth="2" 
+        strokeLinecap="round" 
+        strokeLinejoin="round"
+        className={className}
+        {...props}
+    >
+        <rect x="2" y="3" width="20" height="14" rx="2" />
+        <path d="M8 21h8M12 17v4" />
+    </svg>
+);
+
+
+export const DownloadIcon = ({ className = "w-4 h-4", ...props }) => (
+  <svg 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor"
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round"
+    className={className}
+    {...props}
+  >
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="7 10 12 15 17 10" />
+    <line x1="12" y1="15" x2="12" y2="3" />
+  </svg>
+);
+
+
+// ============================================
+// ICONS OBJECT (default export)
+// ============================================
 const Icons = {
+    X,
+    Close: X,
+    CloseIcon: X,
+    Refresh: RefreshIcon,
     Desktop: DesktopIcon,
     Mobile: MobileIcon,
     Chrome: ChromeIcon,
@@ -290,6 +506,14 @@ const Icons = {
     Linux: LinuxIcon,
     MacOS: MacOSIcon,
     Android: AndroidIcon,
+    Logout: LogoutIcon,
+    Pencil: PencilIcon,
+    Eye: EyeIcon,
+    EyeOff: EyeOffIcon,
+    Device: DeviceIcon,
+    Ip: IpIcon,
+    Screen: ScreenIcon,
+    Download: DownloadIcon,
 };
 
 export default Icons;

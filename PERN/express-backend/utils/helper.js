@@ -1,5 +1,8 @@
+// backend -> utils/helper.js file 
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
+import { ACCESS_TOKEN_EXPIRES_IN, REFRESH_TOKEN_EXPIRES_DAYS } from "../config/tokenConfig.js";
+
 
 /* ─── OTP ─────────────────────────────────────────── */
 export const generateOtp = () => Math.floor(100000 + Math.random() * 900000).toString();
@@ -11,7 +14,7 @@ export const hashToken = (token) => crypto.createHash("sha256").update(token).di
 /* ─── JWT ─────────────────────────────────────────── */
 export const generateAccessToken = (userId, role) =>
   jwt.sign({ user_id: userId, role }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || "15m",
+    expiresIn: ACCESS_TOKEN_EXPIRES_IN,
   });
 
 export const generateRefreshToken = () => crypto.randomBytes(64).toString("hex");
@@ -24,8 +27,16 @@ export const sendError = (res, message, statusCode = 400) =>
   res.status(statusCode).json({ success: false, message });
 
 /* ─── REQUEST META ─────────────────────────────────── */
-export const getIpAddress = (req) =>
-  (req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "").split(",")[0].trim();
+// export const getIpAddress = (req) =>
+//   (req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "").split(",")[0].trim();
+
+export const getIpAddress = (req) => {
+  const forwarded = req.headers["x-forwarded-for"];
+  let ip = forwarded ? forwarded.split(",")[0].trim() : req.socket?.remoteAddress;
+  if (ip?.startsWith("::ffff:")) ip = ip.replace("::ffff:", ""); // IPv4-mapped IPv6
+  if (ip === "::1") ip = "127.0.0.1";
+  return ip || null;
+};
 
 export const normalizeDeviceType = (type = "") => {
   const t = type.toLowerCase();
@@ -36,7 +47,5 @@ export const normalizeDeviceType = (type = "") => {
 };
 
 /* ─── SESSION EXPIRY ───────────────────────────────── */
-export const refreshTokenExpiresAt = () => {
-  const days = parseInt(process.env.REFRESH_TOKEN_DAYS || "30", 10);
-  return new Date(Date.now() + days * 24 * 60 * 60 * 1000);
-};
+export const refreshTokenExpiresAt = () =>
+  new Date(Date.now() + REFRESH_TOKEN_EXPIRES_DAYS * 24 * 60 * 60 * 1000);

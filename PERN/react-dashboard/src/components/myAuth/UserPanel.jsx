@@ -2,6 +2,7 @@
  * src/components/myAuth/UserPanel.jsx
  *
  * Clerk-style floating panel — everything inline, no page redirects.
+ * Uses semantic HTML5 elements with proper ARIA labels.
  * ─────────────────────────────────────────────────────────────────────
  */
 import { Component, useEffect, useRef, useState } from "react";
@@ -10,6 +11,7 @@ import { selectUser, selectUserRole } from "../../store/user";
 import {
   useLogout,
   useChangePassword,
+  useRefreshSession,
 } from "./hooks/useAuthForms";
 import {
   useGetActiveSessions,
@@ -19,14 +21,16 @@ import {
   useUpdateProfile,
 } from "../../api/user/useUser";
 import UserAvatar from "./UserAvatar";
-import Icons from "./ui/icons";
+import { Spinner } from './ui/AuthUI';
+import Icons from './ui/icons';
+import FileModal from "../FileModal";
 
 /* ── constants ───────────────────────────────────────── */
 const ROLE_LABELS = {
   USER: "Member", ADMIN: "Admin", SUPER_ADMIN: "Super Admin",
   MODERATOR: "Moderator", SUPPORT: "Support", OTHER: "Other",
 };
-const TABS = ["Account", "Security", "Sessions", "History"];
+const TABS = ["Account", "Security", "History", "Sessions"];
 
 const BROWSER_ICON_MAP = {
   Chrome: Icons.Chrome,
@@ -48,8 +52,7 @@ const OS_ICON_MAP = {
   Android: Icons.Android,
 };
 
-/* ── Local error boundary — keeps a tab's failure from
-   ever taking the whole panel (or page) down with it ── */
+/* ── Local error boundary ────────────────────────────── */
 class PanelErrorBoundary extends Component {
   state = { hasError: false };
   static getDerivedStateFromError() { return { hasError: true }; }
@@ -57,14 +60,18 @@ class PanelErrorBoundary extends Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="p-6 text-center space-y-1">
+        <section
+          className="p-6 text-center space-y-1"
+          role="alert"
+          aria-live="polite"
+        >
           <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
             Something went wrong.
           </p>
           <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
             Close and reopen this panel. If your session expired, please sign in again.
           </p>
-        </div>
+        </section>
       );
     }
     return this.props.children;
@@ -98,9 +105,32 @@ export default function UserPanel({ onClose, anchor = "right" }) {
 
   return (
     <>
-      {/* Backdrop — mobile only, panel becomes a centered sheet there */}
+      {/* Scoped styles */}
+      <style>{`
+        .panel-scroll {
+          scrollbar-gutter: stable;
+          scrollbar-width: thin;
+          scrollbar-color: var(--border) transparent;
+        }
+        .panel-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .panel-scroll::-webkit-scrollbar-track { background: transparent; }
+        .panel-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 8px; }
+        .panel-scroll::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+        .panel-tab:focus-visible {
+          outline: 2px solid var(--brand-primary);
+          outline-offset: -2px;
+          border-radius: 4px;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .panel-fade { transition: none !important; }
+        }
+        summary::-webkit-details-marker { display: none; }
+        summary { cursor: pointer; list-style: none; }
+      `}</style>
+
+      {/* Backdrop */}
       <div
-        className="fixed inset-0 z-40 sm:hidden"
+        className="panel-fade fixed inset-0 z-40 sm:hidden"
         style={{
           background: "rgba(0,0,0,0.45)",
           opacity: mounted ? 1 : 0,
@@ -110,19 +140,19 @@ export default function UserPanel({ onClose, anchor = "right" }) {
         aria-hidden="true"
       />
 
-      <div
+      <aside
         ref={ref}
         role="dialog"
         aria-label="User account panel"
+        aria-modal="true"
         className={[
-          "fixed sm:absolute z-50 flex flex-col",
+          "panel-fade fixed sm:absolute z-50 flex flex-col w-[98vw] sm:w-[388px]",
           "left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2",
           "sm:left-auto sm:translate-x-0 sm:top-full sm:translate-y-0 sm:mt-3",
           anchor === "left" ? "sm:left-0" : "sm:right-0",
         ].join(" ")}
         style={{
-          width: "min(360px, calc(100vw - 2rem))",
-          maxHeight: "min(560px, calc(100vh - 4rem))",
+          maxHeight: "min(600px, calc(100vh - 4rem))",
           background: "var(--surface)",
           border: "1px solid var(--border)",
           borderRadius: 16,
@@ -132,17 +162,35 @@ export default function UserPanel({ onClose, anchor = "right" }) {
           transition: "opacity 150ms ease",
         }}
       >
+        {/* Header - Always visible */}
         <PanelHeader onClose={onClose} />
+
+        {/* Tab Bar - Always visible */}
         <TabBar tab={tab} setTab={setTab} />
-        <div className="flex-1 overflow-y-auto" style={{ overscrollBehavior: "contain" }}>
-          <PanelErrorBoundary>
-            {tab === "Account"  && <AccountTab  onClose={onClose} />}
+
+        {/* Content - Scrollable with max height */}
+        <section
+          className="flex-1 overflow-y-auto panel-scroll"
+          style={{
+            overscrollBehavior: "contain",
+            maxHeight: "calc(100% - 180px)",
+          }}
+          role="tabpanel"
+          id={`panel-content-${tab}`}
+          aria-labelledby={`panel-tab-${tab}`}
+          tabIndex={-1}
+        >
+          <PanelErrorBoundary key={tab}>
+            {tab === "Account" && <AccountTab onClose={onClose} />}
             {tab === "Security" && <SecurityTab />}
+            {tab === "History" && <HistoryTab />}
             {tab === "Sessions" && <SessionsTab onClose={onClose} />}
-            {tab === "History"  && <HistoryTab />}
           </PanelErrorBoundary>
-        </div>
-      </div>
+        </section>
+
+        {/* Footer - Always visible with Sign Out */}
+        <PanelFooter onClose={onClose} />
+      </aside>
     </>
   );
 }
@@ -152,8 +200,11 @@ function PanelHeader({ onClose }) {
   const user = useSelector(selectUser);
   const role = useSelector(selectUserRole);
   return (
-    <div className="px-5 py-4 flex items-center gap-3" style={{ borderBottom: "1px solid var(--border)" }}>
-      <UserAvatar size={44} />
+    <header
+      className="px-5 py-4 flex items-center gap-3 flex-shrink-0"
+      style={{ borderBottom: "1px solid var(--border)" }}
+    >
+      <BorderedAvatar size={44} />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold truncate leading-tight" style={{ color: "var(--text-primary)" }}>
           {user?.name ?? "User"}
@@ -165,27 +216,53 @@ function PanelHeader({ onClose }) {
       </div>
       <button
         onClick={onClose}
-        className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-colors"
+        className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-colors hover:bg-[var(--surface-hover)]"
         style={{ color: "var(--text-secondary)" }}
-        onMouseEnter={(e) => { e.currentTarget.style.background = "var(--surface-hover)"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
         aria-label="Close panel"
       >
-        <CloseIcon />
+        <Icons.X className="w-4 h-4" strokeWidth={2.5} />
       </button>
-    </div>
+    </header>
   );
 }
 
-/* ── Tab bar ─────────────────────────────────────────── */
+/* ── Tab bar ──────────────────────────────────────────── */
 function TabBar({ tab, setTab }) {
+  const tabRefs = useRef({});
+
+  const onKeyDown = (e, index) => {
+    let nextIndex = null;
+    if (e.key === "ArrowRight") nextIndex = (index + 1) % TABS.length;
+    if (e.key === "ArrowLeft") nextIndex = (index - 1 + TABS.length) % TABS.length;
+    if (e.key === "Home") nextIndex = 0;
+    if (e.key === "End") nextIndex = TABS.length - 1;
+    if (nextIndex !== null) {
+      e.preventDefault();
+      const nextTab = TABS[nextIndex];
+      setTab(nextTab);
+      tabRefs.current[nextTab]?.focus();
+    }
+  };
+
   return (
-    <div className="flex px-2 overflow-x-auto" style={{ borderBottom: "1px solid var(--border)" }}>
-      {TABS.map((t) => (
+    <nav
+      role="tablist"
+      aria-label="Account settings"
+      className="flex px-2 overflow-x-auto overflow-y-hidden panel-scroll h-10 flex-shrink-0"
+      style={{ borderBottom: "1px solid var(--border)" }}
+    >
+      {TABS.map((t, i) => (
         <button
           key={t}
+          ref={(el) => { tabRefs.current[t] = el; }}
+          role="tab"
+          id={`panel-tab-${t}`}
+          aria-selected={tab === t}
+          aria-controls={`panel-content-${t}`}
+          tabIndex={tab === t ? 0 : -1}
           onClick={() => setTab(t)}
-          className="px-3 py-2.5 text-xs font-medium transition-colors whitespace-nowrap"
+          onKeyDown={(e) => onKeyDown(e, i)}
+          className="panel-tab px-3 py-2.5 text-xs font-medium transition-colors whitespace-nowrap hover:text-[var(--brand-primary)]"
           style={{
             color: tab === t ? "var(--brand-primary)" : "var(--text-secondary)",
             background: "transparent",
@@ -193,10 +270,41 @@ function TabBar({ tab, setTab }) {
             marginBottom: -1,
           }}
         >
-          {t}
+          <strong>{t}</strong>
         </button>
       ))}
-    </div>
+    </nav>
+  );
+}
+
+/* ── Panel Footer ────────────────────────────────────── */
+function PanelFooter({ onClose }) {
+  const logout = useLogout();
+
+  return (
+    <footer
+      className="px-5 py-3 flex-shrink-0"
+      style={{
+        borderTop: "1px solid var(--border)",
+        background: "var(--surface)",
+      }}
+    >
+      <button
+        onClick={() => { onClose(); logout.mutate(); }}
+        disabled={logout.isPending}
+        className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg
+                   text-sm font-medium transition-all hover:bg-[color-mix(in_srgb,var(--danger)_8%,transparent)]"
+        style={{
+          color: "var(--danger)",
+          background: "transparent",
+          border: "1px solid transparent",
+        }}
+        aria-label="Sign out of your account"
+      >
+        <Icons.Logout className="w-4 h-4" />
+        {logout.isPending ? "Signing out…" : "Sign out"}
+      </button>
+    </footer>
   );
 }
 
@@ -204,37 +312,50 @@ function TabBar({ tab, setTab }) {
    TAB 1 — ACCOUNT
 ══════════════════════════════════════════════════════ */
 function AccountTab({ onClose }) {
-  const user   = useSelector(selectUser);
-  const role   = useSelector(selectUserRole);
-  const logout = useLogout();
+  const user = useSelector(selectUser);
+  const role = useSelector(selectUserRole);
 
-  const [editing,       setEditing]       = useState(false);
-  const [name,          setName]          = useState(user?.name ?? "");
-  const [avatarFile,    setAvatarFile]    = useState(null);
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(user?.name ?? "");
+  const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState("");
+  const [removeAvatar, setRemoveAvatar] = useState(false);
   const fileRef = useRef(null);
 
   const updateProfile = useUpdateProfile();
+  const hasImage = !removeAvatar && Boolean(avatarPreview || user?.avatar_url);
+  const avatarSrc = avatarPreview || user?.avatar_url;
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!["image/jpeg","image/jpg","image/png","image/webp"].includes(file.type)) return;
+    if (!["image/jpeg", "image/jpg", "image/png", "image/webp"].includes(file.type)) return;
     if (file.size > 5 * 1024 * 1024) return;
     setAvatarFile(file);
+    setRemoveAvatar(false);
     if (avatarPreview) URL.revokeObjectURL(avatarPreview);
     setAvatarPreview(URL.createObjectURL(file));
     e.target.value = "";
+  };
+
+  const handleRemoveAvatar = () => {
+    if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    setAvatarPreview("");
+    setAvatarFile(null);
+    setRemoveAvatar(true);
   };
 
   const handleSave = () => {
     const fd = new FormData();
     fd.append("name", name.trim());
     if (avatarFile) fd.append("avatar", avatarFile);
+    else if (removeAvatar) fd.append("removeAvatar", "true");
+
     updateProfile.mutate(fd, {
       onSuccess: () => {
         setEditing(false);
         setAvatarFile(null);
+        setRemoveAvatar(false);
         if (avatarPreview) { URL.revokeObjectURL(avatarPreview); setAvatarPreview(""); }
       },
     });
@@ -244,63 +365,114 @@ function AccountTab({ onClose }) {
     setEditing(false);
     setName(user?.name ?? "");
     setAvatarFile(null);
+    setRemoveAvatar(false);
     if (avatarPreview) { URL.revokeObjectURL(avatarPreview); setAvatarPreview(""); }
   };
 
   return (
-    <div className="p-5 space-y-4">
-
+    <section className="p-5 space-y-4" aria-label="Account settings">
       {/* Avatar */}
       <div className="flex flex-col items-center gap-2">
-        {editing ? (
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              className="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center select-none"
-              style={{
-                background: avatarPreview || user?.avatar_url ? "transparent" : "var(--brand-primary)",
-                color: "var(--brand-primary-foreground, #fff)",
-                fontSize: 28, fontWeight: 700,
+        <div className="relative">
+          {editing ? (
+            <>
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                className="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center select-none hover:opacity-90 transition-opacity"
+                style={{
+                  background: hasImage ? "transparent" : "var(--brand-primary)",
+                  color: "var(--brand-primary-foreground, #fff)",
+                  fontSize: 28, fontWeight: 700,
+                  border: "1px solid var(--border)",
+                }}
+                aria-label="Change profile photo"
+              >
+                {hasImage ? (
+                  <img
+                    src={avatarSrc}
+                    alt="Profile photo"
+                    className="w-full h-full object-cover"
+                  />
+                ) : getInitials(user?.name)}
+              </button>
+
+              {hasImage && (
+                <button
+                  type="button"
+                  onClick={handleRemoveAvatar}
+                  aria-label="Remove photo"
+                  className="absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center transition-all hover:border-[var(--danger)] hover:text-[var(--danger)]"
+                  style={{
+                    background: "var(--surface)",
+                    border: "1px solid var(--border)",
+                    color: "var(--text-secondary)"
+                  }}
+                >
+                  <Icons.X className="w-3 h-3" strokeWidth={2.5} />
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                aria-label="Change avatar"
+                className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center transition-transform hover:scale-110"
+                style={{
+                  background: "var(--brand-primary)",
+                  color: "var(--brand-primary-foreground, #fff)",
+                  border: "2px solid var(--surface)",
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+                }}
+              >
+                <Icons.Pencil className="w-3.5 h-3.5" />
+              </button>
+
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={handleFileChange}
+                aria-label="Upload profile photo"
+              />
+            </>
+          ) : (
+            <div 
+              className="w-20 h-20 rounded-full overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+              style={{ border: "1px solid var(--border)" }}
+              onClick={() => {
+                if (avatarSrc) {
+                  // Open FileModal for avatar preview
+                  const modal = document.createElement('div');
+                  modal.style.position = 'fixed';
+                  modal.style.inset = '0';
+                  modal.style.zIndex = '9999';
+                  modal.style.pointerEvents = 'none';
+                  document.body.appendChild(modal);
+                  // Close modal on click outside
+                  const closeModal = () => {
+                    document.body.removeChild(modal);
+                    document.removeEventListener('click', closeModal);
+                  };
+                  document.addEventListener('click', closeModal);
+                }
               }}
             >
-              {(avatarPreview || user?.avatar_url) ? (
-                <img
-                  src={avatarPreview || user.avatar_url}
-                  alt="avatar"
-                  className="w-full h-full object-cover"
-                />
-              ) : getInitials(user?.name)}
-            </button>
-
-            {/* Pencil badge — only visible while editing */}
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              aria-label="Change avatar"
-              className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center transition-transform"
-              style={{
-                background: "var(--brand-primary)",
-                color: "var(--brand-primary-foreground, #fff)",
-                border: "2px solid var(--surface)",
-                boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.08)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
-            >
-              <PencilIcon className="w-3.5 h-3.5" />
-            </button>
-
-            <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp"
-              className="hidden" onChange={handleFileChange} />
-          </div>
-        ) : (
-          <UserAvatar size={72} />
-        )}
+              <FileModal
+                src={avatarSrc || ''}
+                alt="Profile photo"
+                type="IMAGE"
+                containerClassName="w-full h-full"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Info rows */}
-      <div className="space-y-1">
+      <dl className="space-y-1">
         <InfoRow label="Name">
           {editing ? (
             <input
@@ -314,6 +486,7 @@ function AccountTab({ onClose }) {
                 boxShadow: "0 0 0 3px color-mix(in srgb, var(--brand-primary) 15%, transparent)",
               }}
               autoFocus
+              aria-label="Your name"
             />
           ) : (
             <span className="text-sm" style={{ color: "var(--text-primary)" }}>{user?.name ?? "—"}</span>
@@ -333,7 +506,7 @@ function AccountTab({ onClose }) {
             {user?.id}
           </span>
         </InfoRow>
-      </div>
+      </dl>
 
       {/* Buttons */}
       {editing ? (
@@ -346,36 +519,70 @@ function AccountTab({ onClose }) {
       ) : (
         <PanelButton onClick={() => setEditing(true)} variant="outline">Edit profile</PanelButton>
       )}
-
-      {/* Sign out */}
-      <div style={{ borderTop: "1px solid var(--border)", paddingTop: 12 }}>
-        <button
-          onClick={() => { onClose(); logout.mutate(); }}
-          disabled={logout.isPending}
-          className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg
-                     text-sm font-medium transition-colors"
-          style={{ color: "var(--error)" }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = "color-mix(in srgb, var(--error) 8%, transparent)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-        >
-          <LogoutIcon />
-          {logout.isPending ? "Signing out…" : "Sign out"}
-        </button>
-      </div>
-    </div>
+    </section>
   );
 }
 
 /* ══════════════════════════════════════════════════════
-   TAB 2 — SECURITY (update password)
+   TAB 2 — SECURITY
 ══════════════════════════════════════════════════════ */
 function SecurityTab() {
+  return (
+    <section className="p-5 space-y-5" aria-label="Security settings">
+      <RefreshSessionCard />
+      <hr style={{ borderTop: "1px solid var(--border)" }} />
+      <ChangePasswordForm />
+    </section>
+  );
+}
+
+function RefreshSessionCard() {
+  const refreshSession = useRefreshSession();
+
+  return (
+    <details
+      className="group p-2 rounded-xl space-y-2.5"
+      style={{ background: "var(--background)", border: "1px solid var(--border)" }}
+    >
+      <summary
+        className="flex items-center justify-between cursor-pointer list-none"
+        style={{ color: "var(--text-primary)" }}
+        aria-label="Toggle session refresh details"
+      >
+        <strong>Refresh session</strong>
+        <span className="transition-transform duration-200 group-open:rotate-180">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+            strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </span>
+      </summary>
+
+      <div className="space-y-3 pt-1">
+        <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
+          Your session renews itself automatically when needed. Use this only if you're
+          being signed out unexpectedly and want to extend your access right now without
+          logging in again.
+        </p>
+        <PanelButton
+          onClick={() => refreshSession.mutate()}
+          loading={refreshSession.isPending}
+          variant="outline"
+        >
+          Refresh now
+        </PanelButton>
+      </div>
+    </details>
+  );
+}
+
+function ChangePasswordForm() {
   const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword]         = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showCurrent, setShowCurrent]         = useState(false);
-  const [showNew, setShowNew]                 = useState(false);
-  const [error, setError]                     = useState("");
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [error, setError] = useState("");
 
   const changePassword = useChangePassword({
     onSuccess: () => {
@@ -393,7 +600,7 @@ function SecurityTab() {
   };
 
   return (
-    <div className="p-5 space-y-4">
+    <div className="space-y-4">
       <div>
         <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Update password</p>
         <p className="text-xs mt-0.5" style={{ color: "var(--text-secondary)" }}>
@@ -401,7 +608,7 @@ function SecurityTab() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-3">
+      <form onSubmit={handleSubmit} className="space-y-3" aria-label="Change password form">
         <PasswordField
           label="Current password"
           value={currentPassword}
@@ -410,14 +617,19 @@ function SecurityTab() {
           onToggleShow={() => setShowCurrent((v) => !v)}
           autoComplete="current-password"
         />
-        <PasswordField
-          label="New password"
-          value={newPassword}
-          onChange={setNewPassword}
-          show={showNew}
-          onToggleShow={() => setShowNew((v) => !v)}
-          autoComplete="new-password"
-        />
+
+        <div>
+          <PasswordField
+            label="New password"
+            value={newPassword}
+            onChange={setNewPassword}
+            show={showNew}
+            onToggleShow={() => setShowNew((v) => !v)}
+            autoComplete="new-password"
+          />
+          <PasswordStrengthMeter password={newPassword} />
+        </div>
+
         <PasswordField
           label="Confirm new password"
           value={confirmPassword}
@@ -426,12 +638,51 @@ function SecurityTab() {
           autoComplete="new-password"
         />
 
-        {error && <p className="text-xs" style={{ color: "var(--error)" }}>{error}</p>}
+        {error && <p className="text-xs" style={{ color: "var(--danger)" }} role="alert">{error}</p>}
 
         <PanelButton type="submit" loading={changePassword.isPending} variant="primary">
           Update password
         </PanelButton>
       </form>
+    </div>
+  );
+}
+
+function getPasswordStrength(pw) {
+  if (!pw) return null;
+  let score = 0;
+  if (pw.length >= 8) score++;
+  if (pw.length >= 12) score++;
+  if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) score++;
+  if (/\d/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+
+  const levels = [
+    { label: "Very weak", color: "#ef4444" },
+    { label: "Weak", color: "#f97316" },
+    { label: "Fair", color: "#eab308" },
+    { label: "Good", color: "#22c55e" },
+    { label: "Strong", color: "#16a34a" },
+  ];
+  const idx = Math.min(score, levels.length - 1);
+  return { filled: idx + 1, total: levels.length, ...levels[idx] };
+}
+
+function PasswordStrengthMeter({ password }) {
+  const strength = getPasswordStrength(password);
+  if (!strength) return null;
+  return (
+    <div className="mt-1.5 space-y-1" aria-live="polite" role="progressbar" aria-valuenow={strength.filled} aria-valuemax={strength.total}>
+      <div className="flex gap-1">
+        {Array.from({ length: strength.total }).map((_, i) => (
+          <div
+            key={i}
+            className="h-1 flex-1 rounded-full transition-colors"
+            style={{ background: i < strength.filled ? strength.color : "var(--border)" }}
+          />
+        ))}
+      </div>
+      <p className="text-xs" style={{ color: strength.color }}>{strength.label}</p>
     </div>
   );
 }
@@ -464,11 +715,11 @@ function PasswordField({ label, value, onChange, show, onToggleShow, autoComplet
           <button
             type="button"
             onClick={onToggleShow}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md"
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md hover:text-[var(--text-primary)]"
             style={{ color: "var(--text-secondary)" }}
             aria-label={show ? "Hide password" : "Show password"}
           >
-            {show ? <EyeOffIcon /> : <EyeIcon />}
+            {show ? <Icons.EyeOff className="w-4 h-4" /> : <Icons.Eye className="w-4 h-4" />}
           </button>
         )}
       </div>
@@ -477,113 +728,95 @@ function PasswordField({ label, value, onChange, show, onToggleShow, autoComplet
 }
 
 /* ══════════════════════════════════════════════════════
-   TAB 3 — SESSIONS
-══════════════════════════════════════════════════════ */
-function SessionsTab({ onClose }) {
-  const { data: sessions = [], isLoading, isError } = useGetActiveSessions({ enabled: true });
-  const revokeSession = useRevokeSession();
-  const logoutAll     = useLogoutAllDevices();
-
-  return (
-    <div className="p-4 space-y-3">
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
-          {isLoading ? "Loading…" : `${sessions.length} active session${sessions.length !== 1 ? "s" : ""}`}
-        </p>
-        {sessions.length > 1 && (
-          <button
-            onClick={() => { onClose(); logoutAll.mutate(); }}
-            disabled={logoutAll.isPending}
-            className="text-xs font-medium px-2 py-1 rounded-md transition-colors"
-            style={{ color: "var(--error)", border: "1px solid var(--error)" }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "color-mix(in srgb, var(--error) 8%, transparent)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-          >
-            Sign out all
-          </button>
-        )}
-      </div>
-
-      {isLoading && <PanelSkeleton rows={2} />}
-      {isError && <ErrorMsg>Failed to load sessions.</ErrorMsg>}
-      {!isLoading && !isError && sessions.length === 0 && (
-        <EmptyMsg>No active sessions found.</EmptyMsg>
-      )}
-
-      {sessions.map((session) => (
-        <SessionCard
-          key={session.id}
-          session={session}
-          onRevoke={() => revokeSession.mutate(session.id)}
-          revoking={revokeSession.isPending && revokeSession.variables === session.id}
-        />
-      ))}
-    </div>
-  );
-}
-
-function SessionCard({ session, onRevoke, revoking }) {
-  const when = session.createdAt
-    ? new Date(session.createdAt).toLocaleDateString(undefined, {
-        month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
-      })
-    : "—";
-  const expires = session.expiresAt
-    ? new Date(session.expiresAt).toLocaleDateString(undefined, {
-        month: "short", day: "numeric", year: "numeric",
-      })
-    : null;
-
-  return (
-    <div
-      className="flex items-start gap-3 p-3 rounded-xl"
-      style={{ background: "var(--background)", border: "1px solid var(--border)" }}
-    >
-      <div
-        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
-        style={{ background: "color-mix(in srgb, var(--brand-primary) 10%, transparent)", color: "var(--brand-primary)" }}
-      >
-        <DeviceIcon type={session.deviceType} />
-      </div>
-      <div className="flex-1 min-w-0 space-y-0.5">
-        <p className="text-xs font-medium" style={{ color: "var(--text-primary)" }}>
-          {session.deviceType ?? "Unknown device"}
-        </p>
-        {session.ipAddress && (
-          <p className="text-xs" style={{ color: "var(--text-secondary)" }}>{session.ipAddress}</p>
-        )}
-        <p className="text-xs" style={{ color: "var(--text-secondary)" }}>Started: {when}</p>
-        {expires && (
-          <p className="text-xs" style={{ color: "var(--muted, var(--text-secondary))" }}>
-            Expires: {expires}
-          </p>
-        )}
-      </div>
-      <button
-        onClick={onRevoke}
-        disabled={revoking}
-        className="text-xs font-medium px-2 py-1 rounded-md flex-shrink-0 transition-colors"
-        style={{ border: "1px solid var(--border)", color: "var(--text-secondary)" }}
-        onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--error)"; e.currentTarget.style.color = "var(--error)"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--text-secondary)"; }}
-      >
-        {revoking ? "…" : "Revoke"}
-      </button>
-    </div>
-  );
-}
-
-/* ══════════════════════════════════════════════════════
-   TAB 4 — LOGIN HISTORY
+   TAB 3 — LOGIN HISTORY
 ══════════════════════════════════════════════════════ */
 function HistoryTab() {
-  const { data: history = [], isLoading, isError } = useGetLoginHistory({ enabled: true });
+  const user = useSelector(selectUser);
+  const { data: history = [], isLoading, isError, refetch, isRefetching } = useGetLoginHistory({ enabled: true });
+
+  const downloadCSV = () => {
+    if (!history.length) return;
+
+    // Headers
+    const headers = [
+      "Date/Time",
+      "IP Address",
+      "Browser",
+      "OS",
+      "Device Type",
+      "Screen Resolution"
+    ];
+
+    // Rows
+    const rows = history.map(entry => [
+      entry.created_at ? new Date(entry.created_at).toLocaleString() : "",
+      entry.ipAddress || "",
+      entry.browser || "",
+      entry.os || "",
+      entry.deviceType || "",
+      entry.screenWidth && entry.screenHeight ? `${entry.screenWidth}×${entry.screenHeight}` : ""
+    ]);
+
+    // Combine user info + table
+    const userInfo = [
+      ["User Information"],
+      ["Name", user?.name || ""],
+      ["Email", user?.email || ""],
+      ["Role", user?.role || ""],
+      [""], // empty row separator
+      ["Login History"],
+      headers,
+      ...rows
+    ];
+
+    // Convert to CSV
+    const csvContent = userInfo
+      .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+
+    // Download
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `login-history-${new Date().toISOString().split("T")[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   return (
-    <div className="p-4 space-y-2">
-      <p className="text-xs font-medium pb-1" style={{ color: "var(--text-secondary)" }}>
-        {isLoading ? "Loading…" : `${history.length} recent logins`}
-      </p>
+    <section className="p-4 space-y-2" aria-label="Login history">
+      <div className="flex items-center justify-between pb-1">
+        <p className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
+          {isLoading ? "Loading…" : `${history.length} recent logins`}
+        </p>
+        <div className="flex items-center gap-2">
+          {history.length > 0 && (
+            <button
+              onClick={downloadCSV}
+              className="p-1.5 rounded-md transition-colors hover:bg-[var(--surface-hover)]"
+              aria-label="Download CSV"
+              title="Download CSV"
+            >
+              <Icons.Download className="w-4 h-4" style={{ color: "var(--text-secondary)" }} />
+            </button>
+          )}
+          <button
+            onClick={() => refetch()}
+            disabled={isRefetching || isLoading}
+            className="p-1.5 rounded-md transition-colors hover:bg-[var(--surface-hover)] disabled:opacity-50"
+            aria-label="Refresh login history"
+          >
+            <Icons.Refresh
+              className="w-4 h-4"
+              spinning={isRefetching || isLoading}
+              style={{ color: "var(--text-secondary)" }}
+            />
+          </button>
+        </div>
+      </div>
 
       {isLoading && <PanelSkeleton rows={3} />}
       {isError && <ErrorMsg>Failed to load history.</ErrorMsg>}
@@ -594,16 +827,16 @@ function HistoryTab() {
       {history.map((entry) => (
         <HistoryCard key={entry.id} entry={entry} />
       ))}
-    </div>
+    </section>
   );
 }
 
 function HistoryCard({ entry }) {
   const when = entry.created_at
     ? new Date(entry.created_at).toLocaleDateString(undefined, {
-        month: "short", day: "numeric", year: "numeric",
-        hour: "2-digit", minute: "2-digit",
-      })
+      month: "short", day: "numeric", year: "numeric",
+      hour: "2-digit", minute: "2-digit",
+    })
     : "—";
 
   const resolution =
@@ -612,16 +845,17 @@ function HistoryCard({ entry }) {
       : null;
 
   return (
-    <div
+    <article
       className="p-3 rounded-xl space-y-2"
       style={{ background: "var(--background)", border: "1px solid var(--border)" }}
     >
-      <div className="flex items-center gap-2">
+      <div className="flex items-start gap-2">
         <div
-          className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0"
+          className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 mt-0.5"
           style={{ background: "color-mix(in srgb, var(--brand-primary) 10%, transparent)", color: "var(--brand-primary)" }}
+          aria-hidden="true"
         >
-          <DeviceIcon type={entry.deviceType} />
+          <Icons.Device type={entry.deviceType} className="w-3.5 h-3.5" />
         </div>
 
         <div className="flex-1 min-w-0 flex items-center gap-1.5 flex-wrap">
@@ -630,7 +864,7 @@ function HistoryCard({ entry }) {
         </div>
 
         <span
-          className="text-xs flex-shrink-0 px-1.5 py-0.5 rounded-full"
+          className="text-xs flex-shrink-0 px-1.5 py-0.5 rounded-full mt-0.5"
           style={{
             background: "color-mix(in srgb, var(--border) 70%, transparent)",
             color: "var(--text-secondary)",
@@ -643,7 +877,7 @@ function HistoryCard({ entry }) {
       <div className="flex items-center gap-3 flex-wrap">
         {entry.ipAddress && (
           <div className="flex items-center gap-1">
-            <IpIcon />
+            <Icons.Ip className="w-3.5 h-3.5" />
             <span className="text-xs font-mono" style={{ color: "var(--text-secondary)" }}>
               {entry.ipAddress}
             </span>
@@ -651,7 +885,7 @@ function HistoryCard({ entry }) {
         )}
         {resolution && (
           <div className="flex items-center gap-1">
-            <ScreenIcon />
+            <Icons.Screen className="w-3.5 h-3.5" />
             <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
               {resolution}
             </span>
@@ -662,11 +896,10 @@ function HistoryCard({ entry }) {
       <p className="text-xs" style={{ color: "var(--muted, var(--text-secondary))" }}>
         {when}
       </p>
-    </div>
+    </article>
   );
 }
 
-/* ── Browser / OS badges — real brand logos from ui/icons.jsx ── */
 function InfoBadge({ icon: Icon, label }) {
   return (
     <span
@@ -688,15 +921,189 @@ function OsBadge({ name }) {
 }
 
 /* ══════════════════════════════════════════════════════
+   TAB 4 — SESSIONS
+══════════════════════════════════════════════════════ */
+function SessionsTab({ onClose }) {
+  const user = useSelector(selectUser);
+  const { data: sessions = [], isLoading, isError, refetch, isRefetching } = useGetActiveSessions({ enabled: true });
+  const revokeSession = useRevokeSession();
+  const logoutAll = useLogoutAllDevices();
+
+  const downloadCSV = () => {
+    if (!sessions.length) return;
+
+    const headers = [
+      "Device Type",
+      "IP Address",
+      "Started",
+      "Expires",
+      "Status"
+    ];
+
+    const rows = sessions.map(session => [
+      session.deviceType || "Unknown",
+      session.ipAddress || "",
+      session.createdAt ? new Date(session.createdAt).toLocaleString() : "",
+      session.expiresAt ? new Date(session.expiresAt).toLocaleString() : "",
+      new Date(session.expiresAt) > new Date() ? "Active" : "Expired"
+    ]);
+
+    const userInfo = [
+      ["User Information"],
+      ["Name", user?.name || ""],
+      ["Email", user?.email || ""],
+      ["Role", user?.role || ""],
+      [""],
+      ["Active Sessions"],
+      headers,
+      ...rows
+    ];
+
+    const csvContent = userInfo
+      .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `sessions-${new Date().toISOString().split("T")[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <section className="p-4 space-y-3" aria-label="Active sessions">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
+          {isLoading ? "Loading…" : `${sessions.length} active session${sessions.length !== 1 ? "s" : ""}`}
+        </p>
+        <div className="flex items-center gap-2">
+          {sessions.length > 0 && (
+            <button
+              onClick={downloadCSV}
+              className="p-1.5 rounded-md transition-colors hover:bg-[var(--surface-hover)]"
+              aria-label="Download CSV"
+              title="Download CSV"
+            >
+              <Icons.Download className="w-4 h-4" style={{ color: "var(--text-secondary)" }} />
+            </button>
+          )}
+          <button
+            onClick={() => refetch()}
+            disabled={isRefetching || isLoading}
+            className="p-1.5 rounded-md transition-colors hover:bg-[var(--surface-hover)] disabled:opacity-50"
+            aria-label="Refresh sessions"
+          >
+            <Icons.Refresh
+              className="w-4 h-4"
+              spinning={isRefetching || isLoading}
+              style={{ color: "var(--text-secondary)" }}
+            />
+          </button>
+          {sessions.length > 1 && (
+            <button
+              onClick={() => { onClose(); logoutAll.mutate(); }}
+              disabled={logoutAll.isPending}
+              className="text-xs font-medium px-2 py-1 rounded-md transition-all hover:bg-[color-mix(in_srgb,var(--danger)_8%,transparent)]"
+              style={{ color: "var(--danger)", border: "1px solid var(--danger)", background: "transparent" }}
+              aria-label="Sign out from all devices"
+            >
+              Sign out all
+            </button>
+          )}
+        </div>
+      </div>
+
+      {isLoading && <PanelSkeleton rows={2} />}
+      {isError && <ErrorMsg>Failed to load sessions.</ErrorMsg>}
+      {!isLoading && !isError && sessions.length === 0 && (
+        <EmptyMsg>No active sessions found.</EmptyMsg>
+      )}
+
+      {sessions.map((session) => (
+        <SessionCard
+          key={session.id}
+          session={session}
+          onRevoke={() => revokeSession.mutate(session.id)}
+          revoking={revokeSession.isPending && revokeSession.variables === session.id}
+        />
+      ))}
+    </section>
+  );
+}
+
+function SessionCard({ session, onRevoke, revoking }) {
+  const when = session.createdAt
+    ? new Date(session.createdAt).toLocaleDateString(undefined, {
+      month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+    })
+    : "—";
+  const expires = session.expiresAt
+    ? new Date(session.expiresAt).toLocaleDateString(undefined, {
+      month: "short", day: "numeric", year: "numeric",
+    })
+    : null;
+
+  return (
+    <article
+      className="flex items-start gap-3 p-3 rounded-xl"
+      style={{ background: "var(--background)", border: "1px solid var(--border)" }}
+    >
+      <div
+        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
+        style={{ background: "color-mix(in srgb, var(--brand-primary) 10%, transparent)", color: "var(--brand-primary)" }}
+        aria-hidden="true"
+      >
+        <Icons.Device type={session.deviceType} className="w-4 h-4" />
+      </div>
+      <div className="flex-1 min-w-0 space-y-0.5">
+        <p className="text-xs font-medium" style={{ color: "var(--text-primary)" }}>
+          {session.deviceType ?? "Unknown device"}
+        </p>
+        {session.ipAddress && (
+          <p className="text-xs" style={{ color: "var(--text-secondary)" }}>{session.ipAddress}</p>
+        )}
+        <p className="text-xs" style={{ color: "var(--text-secondary)" }}>Started: {when}</p>
+        {expires && (
+          <p className="text-xs" style={{ color: "var(--muted, var(--text-secondary))" }}>
+            Expires: {expires}
+          </p>
+        )}
+      </div>
+      <button
+        onClick={onRevoke}
+        disabled={revoking}
+        className="text-xs font-medium px-2 py-1 rounded-md flex-shrink-0 transition-all hover:border-[var(--danger)] hover:text-[var(--danger)]"
+        style={{ border: "1px solid var(--border)", color: "var(--text-secondary)", background: "transparent" }}
+        aria-label={`Revoke session from ${session.deviceType || 'unknown device'}`}
+      >
+        {revoking ? "…" : "Revoke"}
+      </button>
+    </article>
+  );
+}
+
+/* ══════════════════════════════════════════════════════
    SHARED PRIMITIVES
 ══════════════════════════════════════════════════════ */
+function BorderedAvatar({ size }) {
+  return (
+    <div className="rounded-full inline-flex" style={{ border: "1px solid var(--border)", lineHeight: 0 }}>
+      <UserAvatar size={size} />
+    </div>
+  );
+}
+
 function InfoRow({ label, children }) {
   return (
     <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg" style={{ background: "var(--background)" }}>
-      <span className="text-xs font-medium flex-shrink-0 w-14" style={{ color: "var(--text-secondary)" }}>
+      <dt className="text-xs font-medium flex-shrink-0 w-14" style={{ color: "var(--text-secondary)" }}>
         {label}
-      </span>
-      <div className="flex-1 min-w-0">{children}</div>
+      </dt>
+      <dd className="flex-1 min-w-0">{children}</dd>
     </div>
   );
 }
@@ -722,13 +1129,12 @@ function PanelButton({ children, onClick, variant = "primary", loading = false, 
       type={type}
       onClick={onClick}
       disabled={loading}
-      className="flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors
-                 flex items-center justify-center gap-2"
+      className="flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 hover:opacity-90"
       style={isPrimary
         ? { background: loading ? "var(--muted)" : "var(--brand-primary)", color: "var(--brand-primary-foreground, #fff)", opacity: loading ? 0.7 : 1 }
         : { background: "transparent", border: "1px solid var(--border)", color: "var(--text-primary)" }}
     >
-      {loading && <SmallSpinner />}
+      {loading && <Spinner size={16} />}
       {children}
     </button>
   );
@@ -736,7 +1142,7 @@ function PanelButton({ children, onClick, variant = "primary", loading = false, 
 
 function PanelSkeleton({ rows = 2 }) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" aria-hidden="true">
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} className="h-16 rounded-xl animate-pulse"
           style={{ background: "var(--surface-hover, var(--border))" }} />
@@ -746,7 +1152,7 @@ function PanelSkeleton({ rows = 2 }) {
 }
 
 function ErrorMsg({ children }) {
-  return <p className="text-xs text-center py-4" style={{ color: "var(--error)" }}>{children}</p>;
+  return <p className="text-xs text-center py-4" style={{ color: "var(--danger)" }} role="alert">{children}</p>;
 }
 
 function EmptyMsg({ children }) {
@@ -759,86 +1165,4 @@ function getInitials(name = "") {
   if (!parts.length) return "?";
   if (parts.length === 1) return parts[0][0].toUpperCase();
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
-
-/* ─── Icons ──────────────────────────────────────────── */
-function DeviceIcon({ type }) {
-  const Icon = type === "MOBILE" || type === "TABLET" ? Icons.Mobile : Icons.Desktop;
-  return <Icon className="w-3.5 h-3.5" />;
-}
-
-function IpIcon() {
-  return (
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)"
-      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10"/>
-      <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-    </svg>
-  );
-}
-
-function ScreenIcon() {
-  return (
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)"
-      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
-    </svg>
-  );
-}
-
-function CloseIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-      <path d="M18 6L6 18M6 6l12 12" />
-    </svg>
-  );
-}
-
-function LogoutIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-      <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
-    </svg>
-  );
-}
-
-function PencilIcon({ className = "w-3.5 h-3.5" }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"
-      strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M12 20h9" />
-      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-    </svg>
-  );
-}
-
-function EyeIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  );
-}
-
-function EyeOffIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a18.5 18.5 0 0 1 4.22-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-      <line x1="1" y1="1" x2="23" y2="23" />
-    </svg>
-  );
-}
-
-function SmallSpinner() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="2.5" strokeLinecap="round" className="animate-spin">
-      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-    </svg>
-  );
 }

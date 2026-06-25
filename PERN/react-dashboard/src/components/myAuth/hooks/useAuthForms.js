@@ -9,16 +9,11 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
 import {
-  loginApi,
-  registerApi,
-  verifyOtpApi,
-  resendOtpApi,
-  logoutApi,
-  forgotPasswordApi,
-  resetPasswordApi,
-  changePasswordApi,
+  loginApi, registerApi, verifyOtpApi,
+  resendOtpApi, logoutApi, forgotPasswordApi,
+  resetPasswordApi, changePasswordApi, refreshTokenApi,
 } from "../../../api/user/authApi";
-import { setCredentials, clearCredentials, selectRefreshToken } from "../../../store/user";
+import { setCredentials, setTokens, clearCredentials, selectRefreshToken } from "../../../store/user";
 import { getDeviceInfo } from "../../../utils/deviceInfo";
 
 /* ─── LOGIN ─────────────────────────────────────────── */
@@ -177,6 +172,25 @@ export const useChangePassword = ({ onSuccess: onSuccessCb } = {}) => {
     },
     onError: (error) => {
       toast.error(error?.response?.data?.message || "Failed to update password.");
+    },
+  });
+};
+
+
+//  ─── REFRESH SESSION (manual) ──────────────────────────
+export const useRefreshSession = () => {
+  const dispatch = useDispatch();
+  const refreshToken = useSelector(selectRefreshToken);
+
+  return useMutation({
+    mutationFn: () => refreshTokenApi(refreshToken),
+    onSuccess: (data) => {
+      const { accessToken, refreshToken: newRefreshToken } = data?.data ?? {};
+      dispatch(setTokens({ accessToken, refreshToken: newRefreshToken }));
+      toast.success("Session refreshed.");
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Couldn't refresh your session. Please sign in again.");
     },
   });
 };
