@@ -11,7 +11,7 @@ import AddBlog from "./pages/Blog/AddBlog";
 import ManageBlogs from "./pages/Blog/ManageBlogs";
 import EditBlog from "./pages/Blog/EditBlog";
 
-import Newsletter from "./pages/Newsletter";
+import NewsLetter from "./pages/NewsLetter";
 import ManageMedia from "./pages/ManageMedia";
 import ManageBlogCategories from "./pages/Blog/ManageBlogCategories";
 import DashBoardOutlet from "./components/layout/DashBoardOutlet";
@@ -67,7 +67,7 @@ const App = () => {
             </Route>
 
             {/* These routes don't need role guard */}
-            <Route path="/dashboard/newsletter" element={<Newsletter />} />
+            <Route path="/dashboard/newsletter" element={<NewsLetter />} />
             <Route path="/dashboard/manage-media" element={<ManageMedia />} />
 
             {/* Dashboard 404 */}

@@ -20,7 +20,7 @@ import {
   useDeleteSubscriber,
 } from "../api/newsletter/useNewsletter";
 
-const Newsletter = () => {
+const NewsLetter = () => {
   const { data, isLoading, isError, error, refetch } = useGetAllSubscribers();
 
   const {
@@ -363,4 +363,4 @@ const Newsletter = () => {
   );
 };
  
-export default Newsletter;
+export default NewsLetter;
