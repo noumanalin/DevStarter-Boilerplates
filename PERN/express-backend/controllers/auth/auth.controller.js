@@ -16,20 +16,21 @@ import {
   getResourceType,
   getUploadFormat,
 } from "../../config/cloudinary.js";
+import { enforceLoginHistoryLimit, enforceSessionLimit } from "./enforcement.limit.js";
 
 /* ─── helpers ──────────────────────────────────────────── */
 const buildSessionPayload = (req, body, userId) => ({
   userId,
   refreshToken: "",
-  ipAddress: getIpAddress(req),
-  userAgent: body.userAgent || req.headers["user-agent"] || null,
-  deviceType: normalizeDeviceType(body.deviceType),
-  expiresAt: refreshTokenExpiresAt(),
+  ipAddress:    getIpAddress(req),
+  userAgent:    body.userAgent || req.headers["user-agent"] || null,
+  deviceType:   normalizeDeviceType(body.deviceType),
+  expiresAt:    refreshTokenExpiresAt(),
 });
 
 const buildLoginHistoryPayload = (req, body, userId) => ({
   userId,
-  ipAddress: getIpAddress(req),
+  ipAddress:    getIpAddress(req),
   browser:      body.browser      || null,
   os:           body.os           || null,
   deviceType:   normalizeDeviceType(body.deviceType),
@@ -38,11 +39,7 @@ const buildLoginHistoryPayload = (req, body, userId) => ({
   userAgent:    body.userAgent    || req.headers["user-agent"]  || null,
 });
 
-/* ─── REGISTER ────────────────────────────────────────────
-   Accepts multipart/form-data.
-   req.file  — optional avatar (populated by multer upload.single("avatar"))
-   req.body  — { name, email, password }
-────────────────────────────────────────────────────────── */
+/* ─── REGISTER ──────────────────────────────────────────── */
 export const register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -61,8 +58,8 @@ export const register = async (req, res) => {
 
       const result = await uploadToCloudinary(
         req.file.buffer,
-        "avatars",           // Cloudinary folder
-        undefined,           // let Cloudinary auto-generate the public_id
+        "avatars",
+        undefined,    // auto-generate public_id
         resourceType,
         format
       );
@@ -77,13 +74,13 @@ export const register = async (req, res) => {
 
     await prisma.user.create({
       data: {
-        name:        name.trim(),
-        email:       normalizedEmail,
-        password:    hashed,
-        avatar_url,                       // null if no file was uploaded
-        otp:         hashedOtp,
-        otp_expires: otpExpiresAt(10),
-        otp_purpose: "EMAIL_VERIFICATION",
+        name:         name.trim(),
+        email:        normalizedEmail,
+        password:     hashed,
+        avatar_url,
+        otp:          hashedOtp,
+        otp_expires:  otpExpiresAt(10),
+        otp_purpose:  "EMAIL_VERIFICATION",
         otp_attempts: 0,
       },
     });
@@ -183,51 +180,64 @@ export const resendOtp = async (req, res) => {
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const normalizedEmail     = email.toLowerCase().trim();
+    const normalizedEmail = email.toLowerCase().trim();
 
     const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (!user) return sendError(res, "Invalid email or password.", 401);
 
-    if (user.status === "BANNED")     return sendError(res, "Your account has been banned. Contact support.", 403);
-    if (user.status === "SUSPENDED")  return sendError(res, "Your account is suspended. Contact support.", 403);
-    if (user.deleted_at)              return sendError(res, "This account no longer exists.", 404);
-    if (!user.is_verified)            return sendError(res, "Please verify your email before logging in.", 403);
+    if (user.status === "BANNED") return sendError(res, "Your account has been banned. Contact support.", 403);
+    if (user.status === "SUSPENDED") return sendError(res, "Your account is suspended. Contact support.", 403);
+    if (user.deleted_at) return sendError(res, "This account no longer exists.", 404);
+    if (!user.is_verified) return sendError(res, "Please verify your email before logging in.", 403);
 
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) return sendError(res, "Invalid email or password.", 401);
 
-    const accessToken        = generateAccessToken(user.id, user.role);
-    const rawRefreshToken    = generateRefreshToken();
+    const accessToken = generateAccessToken(user.id, user.role);
+    const rawRefreshToken = generateRefreshToken();
     const hashedRefreshToken = hashToken(rawRefreshToken);
 
-    const sessionBase    = buildSessionPayload(req, req.body, user.id);
+    const sessionBase = buildSessionPayload(req, req.body, user.id);
     const historyPayload = buildLoginHistoryPayload(req, req.body, user.id);
-    const now            = new Date();
+    const now = new Date();
 
+    // Create session and login history in a transaction
     const [session] = await prisma.$transaction([
-      prisma.session.create({ data: { ...sessionBase, refreshToken: hashedRefreshToken } }),
+      prisma.session.create({ 
+        data: { ...sessionBase, refreshToken: hashedRefreshToken } 
+      }),
       prisma.loginHistory.create({ data: historyPayload }),
-      prisma.user.update({ where: { id: user.id }, data: { last_login_at: now } }),
+      prisma.user.update({
+        where: { id: user.id },
+        data: { last_login_at: now },
+      }),
     ]);
+
+    // ✅ Enforce session limit (keep only 8 most recent sessions)
+    // Pass the new session ID to keep it from being deleted
+    await enforceSessionLimit(user.id, session.id);
+
+    // ✅ Enforce login history limit (keep only 8 most recent)
+    await enforceLoginHistoryLimit(user.id);
 
     return sendSuccess(res, "Logged in successfully.", {
       data: {
         accessToken,
         refreshToken: rawRefreshToken,
         user: {
-          id:            user.id,
-          name:          user.name,
-          email:         user.email,
-          role:          user.role,
-          avatar_url:    user.avatar_url,
-          last_login_at: user.last_login_at, // previous login time (before this login)
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          avatar_url: user.avatar_url,
+          last_login_at: user.last_login_at,
         },
         session: {
-          id:         session.id,
+          id: session.id,
           deviceType: session.deviceType,
-          ipAddress:  session.ipAddress,
-          createdAt:  session.createdAt,
-          expiresAt:  session.expiresAt,
+          ipAddress: session.ipAddress,
+          createdAt: session.createdAt,
+          expiresAt: session.expiresAt,
         },
       },
     });
@@ -263,6 +273,7 @@ export const refreshAccessToken = async (req, res) => {
     const newRawRefreshToken    = generateRefreshToken();
     const newHashedRefreshToken = hashToken(newRawRefreshToken);
 
+    // Rotate token in-place — row count stays the same, no pruning needed
     await prisma.session.update({
       where: { id: session.id },
       data:  { refreshToken: newHashedRefreshToken, expiresAt: refreshTokenExpiresAt() },
@@ -377,7 +388,6 @@ export const resetPassword = async (req, res) => {
   }
 };
 
-
 /* ─── CHANGE PASSWORD (authenticated) ─────────────────── */
 export const changePassword = async (req, res) => {
   try {
@@ -397,7 +407,7 @@ export const changePassword = async (req, res) => {
 
     await prisma.user.update({
       where: { id: userId },
-      data: { password: hashed },
+      data:  { password: hashed },
     });
 
     await sendPasswordChangedEmail(user.email, user.name);

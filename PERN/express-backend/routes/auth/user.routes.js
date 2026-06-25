@@ -1,14 +1,14 @@
 import express from "express";
 import multer from "multer";
 import isLoggedIn from "../../middlewares/isLoggedIn.js";
+import upload from "../../middlewares/upload.middleware.js";
 import {
   getProfile, updateProfile, getLoginHistory,
   getAllUsers, getUserById, updateUserRole,
   updateUserStatus, deleteUser,
 } from "../../controllers/auth/user.controller.js";
 
-const router = express.Router();
-const upload = multer({ storage: multer.memoryStorage() });
+const router = express.Router(); 
 
 router.get("/profile",        isLoggedIn(),                                    getProfile);
 router.put("/profile",        isLoggedIn(), upload.single("avatar"),           updateProfile);

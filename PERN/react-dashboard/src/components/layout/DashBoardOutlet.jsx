@@ -320,7 +320,7 @@ const Navbar = ({ onMobileMenuClick }) => {
                 <ThemeToggle />
                 <ThemeColorPicker />
                 <div className="w-px h-8 bg-[var(--border)] mx-1" />
-                <UserButton/>
+                <UserButton size = {40}/>
             </div>
         </header>
     );

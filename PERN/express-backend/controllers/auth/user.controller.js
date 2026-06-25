@@ -1,3 +1,4 @@
+// controllers/auth/user.controller.js
 import bcrypt from "bcrypt";
 import { prisma } from "../../config/db.js";
 import {
@@ -12,8 +13,10 @@ import {
 } from "../../services/emailNotifications.js";
 import {
   uploadToCloudinary,
+  deleteFromCloudinary,
   getResourceType,
   getUploadFormat,
+  extractPublicId,
 } from "../../config/cloudinary.js";
 
 /* ─── helpers ──────────────────────────────────────────── */
@@ -52,6 +55,25 @@ export const register = async (req, res) => {
     const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (existing) return sendError(res, "An account with this email already exists.", 409);
 
+    // ── Upload avatar to Cloudinary (optional) ───────────
+    let avatar_url = null;
+
+    if (req.file) {
+      const mime         = req.file.mimetype;
+      const resourceType = getResourceType(mime);
+      const format       = getUploadFormat(mime, req.file.originalname);
+
+      const result = await uploadToCloudinary(
+        req.file.buffer,
+        "avatars",           // Cloudinary folder
+        undefined,           // let Cloudinary auto-generate the public_id
+        resourceType,
+        format
+      );
+
+      avatar_url = result.secure_url;
+    }
+
     const hashed = await bcrypt.hash(password, 12);
     const otp = generateOtp();
     const hashedOtp = await bcrypt.hash(otp, 10);
@@ -61,6 +83,7 @@ export const register = async (req, res) => {
         name: name.trim(),
         email: normalizedEmail,
         password: hashed,
+        avatar_url,
         otp: hashedOtp,
         otp_expires: otpExpiresAt(10),
         otp_purpose: "EMAIL_VERIFICATION",
@@ -330,6 +353,37 @@ export const resetPassword = async (req, res) => {
   }
 };
 
+/* ─── CHANGE PASSWORD (authenticated) ─────────────────── */
+export const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user.id;
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return sendError(res, "User not found.", 404);
+
+    const passwordMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!passwordMatch) return sendError(res, "Current password is incorrect.", 401);
+
+    if (currentPassword === newPassword)
+      return sendError(res, "New password must be different from your current password.", 400);
+
+    const hashed = await bcrypt.hash(newPassword, 12);
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: hashed },
+    });
+
+    await sendPasswordChangedEmail(user.email, user.name);
+
+    return sendSuccess(res, "Password updated successfully.");
+  } catch (err) {
+    console.error("changePassword:", err);
+    return sendError(res, "Failed to update password. Please try again.", 500);
+  }
+};
+
 /* ─── USER PROFILE ────────────────────────────────────── */
 export const getProfile = async (req, res) => {
   try {
@@ -359,6 +413,7 @@ export const getProfile = async (req, res) => {
   }
 };
 
+/* ─── UPDATE PROFILE ────────────────────────────────────── */
 export const updateProfile = async (req, res) => {
   try {
     const { name } = req.body;
@@ -367,7 +422,11 @@ export const updateProfile = async (req, res) => {
     // Check if user exists and is not deleted
     const existingUser = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, deleted_at: true },
+      select: { 
+        id: true, 
+        deleted_at: true,
+        avatar_url: true,
+      },
     });
 
     if (!existingUser || existingUser.deleted_at) {
@@ -379,9 +438,35 @@ export const updateProfile = async (req, res) => {
     
     // Handle avatar upload if file is present
     if (req.file) {
-      // In a real app, you'd upload to cloud storage (S3, Cloudinary, etc.)
-      // For now, we'll just store the file info
-      updateData.avatar_url = req.file.location || `/uploads/${req.file.filename}`;
+      // Delete previous avatar if exists
+      if (existingUser.avatar_url) {
+        try {
+          const publicId = extractPublicId(existingUser.avatar_url);
+          if (publicId) {
+            // Determine resource type from the URL or use default
+            const resourceType = existingUser.avatar_url.includes('/image/upload/') ? 'image' : 'image';
+            await deleteFromCloudinary(publicId, resourceType);
+          }
+        } catch (deleteErr) {
+          console.error("Failed to delete old avatar:", deleteErr);
+          // Continue with upload even if deletion fails
+        }
+      }
+
+      // Upload new avatar to Cloudinary
+      const mime = req.file.mimetype;
+      const resourceType = getResourceType(mime);
+      const format = getUploadFormat(mime, req.file.originalname);
+
+      const result = await uploadToCloudinary(
+        req.file.buffer,
+        "avatars",
+        undefined, // auto-generate public_id
+        resourceType,
+        format
+      );
+
+      updateData.avatar_url = result.secure_url;
     }
 
     const updatedUser = await prisma.user.update({
@@ -407,6 +492,7 @@ export const updateProfile = async (req, res) => {
   }
 };
 
+/* ─── GET LOGIN HISTORY ────────────────────────────────── */
 export const getLoginHistory = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -668,7 +754,7 @@ export const deleteUser = async (req, res) => {
     // Check if user exists
     const user = await prisma.user.findUnique({
       where: { id },
-      select: { id: true, deleted_at: true, role: true },
+      select: { id: true, deleted_at: true, role: true, avatar_url: true },
     });
 
     if (!user) return sendError(res, "User not found.", 404);
@@ -677,6 +763,20 @@ export const deleteUser = async (req, res) => {
     // Prevent deleting SUPER_ADMIN (optional safety)
     if (user.role === "SUPER_ADMIN") {
       return sendError(res, "Cannot delete SUPER_ADMIN account.", 403);
+    }
+
+    // Delete avatar from Cloudinary if exists
+    if (user.avatar_url) {
+      try {
+        const publicId = extractPublicId(user.avatar_url);
+        if (publicId) {
+          const resourceType = user.avatar_url.includes('/image/upload/') ? 'image' : 'image';
+          await deleteFromCloudinary(publicId, resourceType);
+        }
+      } catch (deleteErr) {
+        console.error("Failed to delete avatar:", deleteErr);
+        // Continue with user deletion even if avatar deletion fails
+      }
     }
 
     // Soft delete - set deleted_at and status to DELETED
