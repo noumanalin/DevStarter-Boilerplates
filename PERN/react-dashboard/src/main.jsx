@@ -38,9 +38,6 @@ const asyncStoragePersister = createAsyncStoragePersister({
   throttleTime: 1000,
 });
 
-/**
- * 🔥 THIS is what you were missing
- */
 persistQueryClient({
   queryClient,
   persister: asyncStoragePersister,

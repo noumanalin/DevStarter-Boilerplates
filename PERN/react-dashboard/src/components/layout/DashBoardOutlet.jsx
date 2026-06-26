@@ -5,9 +5,10 @@ import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import {
     LayoutDashboard, FolderTree, Star, FileUser,
     Images, ClipboardPlus, Layers, UserPlus,
-    ChartNoAxesCombined, ChevronDown,ChevronLeft, ChevronRight,
-    LogOut, User, Mail, Shield,  X, PlusCircle,  Users, MessageSquare, Mail as MailIcon,  Newspaper,
-    Menu, Clock
+    ChartNoAxesCombined, ChevronDown, ChevronLeft, ChevronRight,
+    LogOut, User, Mail, Shield, X, PlusCircle, Users, MessageSquare, Mail as MailIcon, Newspaper,
+    Menu, Clock,
+    ArrowUpIcon
 } from "lucide-react";
 
 import ThemeToggle from "../functional/ThemeToggle";
@@ -15,6 +16,7 @@ import ThemeColorPicker from "../functional/ThemeColorPicker";
 import UserButton from "../myAuth/UserButton";
 
 import { SITE_NAME } from "../../utils/info";
+import Icons from "../myAuth/ui/icons";
 
 /* ─────────────────────────────────────────────
    SIDEBAR NAV ITEMS (auth‑free)
@@ -320,7 +322,25 @@ const Navbar = ({ onMobileMenuClick }) => {
                 <ThemeToggle />
                 <ThemeColorPicker />
                 <div className="w-px h-8 bg-[var(--border)] mx-1" />
-                <UserButton size = {40}/>
+
+                <UserButton linksTabName="Apps">
+                    <UserButton.LinksTab className="flex flex-col gap-3 p-4">
+                        <div className="grid grid-cols-2 gap-3">
+                            <a href="/dashboard" className="ecom-card p-3 rounded-xl text-center hover:border-[var(--brand-primary)]">
+                                <span className="block text-sm font-medium">Dashboard</span>
+                                <span className="text-xs text-[var(--text-secondary)]">Overview</span>
+                            </a>
+                            <a href="/orders" className="ecom-card p-3 rounded-xl text-center hover:border-[var(--brand-primary)]">
+                                <span className="block text-sm font-medium">Orders</span>
+                                <span className="text-xs text-[var(--text-secondary)]">History</span>
+                            </a>
+                        </div>
+                    </UserButton.LinksTab>
+                </UserButton>
+
+                <UserButton />
+
+
             </div>
         </header>
     );
@@ -332,7 +352,7 @@ const Navbar = ({ onMobileMenuClick }) => {
 const DashBoardOutlet = () => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
- 
+
     return (
         <div className="flex h-screen overflow-hidden bg-[var(--background)]">
             <Sidebar

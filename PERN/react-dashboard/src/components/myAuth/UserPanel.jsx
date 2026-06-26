@@ -3,6 +3,7 @@
  *
  * Clerk-style floating panel — everything inline, no page redirects.
  * Uses semantic HTML5 elements with proper ARIA labels.
+ * Supports all color themes via CSS custom properties.
  * ─────────────────────────────────────────────────────────────────────
  */
 import { Component, useEffect, useRef, useState } from "react";
@@ -24,13 +25,14 @@ import UserAvatar from "./UserAvatar";
 import { Spinner } from './ui/AuthUI';
 import Icons from './ui/icons';
 import FileModal from "../FileModal";
+import ImageViewer from "./ui/ImageViewer"; 
 
 /* ── constants ───────────────────────────────────────── */
 const ROLE_LABELS = {
   USER: "Member", ADMIN: "Admin", SUPER_ADMIN: "Super Admin",
   MODERATOR: "Moderator", SUPPORT: "Support", OTHER: "Other",
 };
-const TABS = ["Account", "Security", "History", "Sessions"];
+const BASE_TABS = ["Account", "Security", "History", "Sessions"];
 
 const BROWSER_ICON_MAP = {
   Chrome: Icons.Chrome,
@@ -81,9 +83,18 @@ class PanelErrorBoundary extends Component {
 /* ══════════════════════════════════════════════════════
    MAIN PANEL
 ══════════════════════════════════════════════════════ */
-export default function UserPanel({ onClose, anchor = "right" }) {
+export default function UserPanel({
+  onClose,
+  anchor = "right",
+  customLinksContent = null,
+  customLinksClassName = "",
+  customLinksTabName = "Links",
+}) {
   const ref = useRef(null);
-  const [tab, setTab] = useState("Account");
+  const hasLinksTab = Boolean(customLinksContent);
+  const linksTabLabel = customLinksTabName || "Links";
+  const TABS = hasLinksTab ? [linksTabLabel, ...BASE_TABS] : BASE_TABS;
+  const [tab, setTab] = useState(() => (hasLinksTab ? linksTabLabel : "Account"));
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -105,7 +116,7 @@ export default function UserPanel({ onClose, anchor = "right" }) {
 
   return (
     <>
-      {/* Scoped styles */}
+      {/* Scoped styles - Enhanced with theme support */}
       <style>{`
         .panel-scroll {
           scrollbar-gutter: stable;
@@ -114,27 +125,80 @@ export default function UserPanel({ onClose, anchor = "right" }) {
         }
         .panel-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
         .panel-scroll::-webkit-scrollbar-track { background: transparent; }
-        .panel-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 8px; }
-        .panel-scroll::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+        .panel-scroll::-webkit-scrollbar-thumb { 
+          background: var(--border); 
+          border-radius: 8px;
+          transition: background 0.2s;
+        }
+        .panel-scroll::-webkit-scrollbar-thumb:hover { 
+          background: var(--text-secondary); 
+        }
         .panel-tab:focus-visible {
           outline: 2px solid var(--brand-primary);
           outline-offset: -2px;
           border-radius: 4px;
         }
+        .panel-tab {
+          position: relative;
+          transition: all 0.2s ease;
+        }
+        .panel-tab::after {
+          content: '';
+          position: absolute;
+          bottom: -2px;
+          left: 50%;
+          width: 0;
+          height: 2.5px;
+          background: var(--brand-primary);
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          transform: translateX(-50%);
+          border-radius: 2px;
+        }
+        .panel-tab:hover::after {
+          width: 60%;
+        }
+        .panel-tab[aria-selected="true"]::after {
+          width: 100%;
+        }
+        .panel-tab:hover {
+          color: var(--brand-primary) !important;
+        }
         @media (prefers-reduced-motion: reduce) {
           .panel-fade { transition: none !important; }
+          .panel-tab::after { transition: none !important; }
         }
         summary::-webkit-details-marker { display: none; }
         summary { cursor: pointer; list-style: none; }
+        
+        /* Ecommerce card hover effects */
+        .ecom-card {
+          transition: all 0.2s ease;
+          border: 1px solid var(--border);
+        }
+        .ecom-card:hover {
+          border-color: var(--brand-primary);
+          box-shadow: 0 4px 12px color-mix(in srgb, var(--brand-primary) 10%, transparent);
+          transform: translateY(-1px);
+        }
+        
+        /* Status indicator pulse */
+        .status-pulse {
+          animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
       `}</style>
 
       {/* Backdrop */}
       <div
         className="panel-fade fixed inset-0 z-40 sm:hidden"
         style={{
-          background: "rgba(0,0,0,0.45)",
+          background: "rgba(0,0,0,0.5)",
+          backdropFilter: "blur(6px)",
           opacity: mounted ? 1 : 0,
-          transition: "opacity 150ms ease",
+          transition: "opacity 200ms ease",
         }}
         onClick={onClose}
         aria-hidden="true"
@@ -146,27 +210,28 @@ export default function UserPanel({ onClose, anchor = "right" }) {
         aria-label="User account panel"
         aria-modal="true"
         className={[
-          "panel-fade fixed sm:absolute z-50 flex flex-col w-[98vw] sm:w-[388px]",
+          "panel-fade fixed sm:absolute z-50 flex flex-col w-[98vw] sm:w-[400px] md:w-[580px]",
           "left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2",
           "sm:left-auto sm:translate-x-0 sm:top-full sm:translate-y-0 sm:mt-3",
           anchor === "left" ? "sm:left-0" : "sm:right-0",
         ].join(" ")}
         style={{
-          maxHeight: "min(600px, calc(100vh - 4rem))",
+          maxHeight: "min(640px, calc(100vh - 4rem))",
           background: "var(--surface)",
           border: "1px solid var(--border)",
-          borderRadius: 16,
-          boxShadow: "0 20px 60px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.08)",
+          borderRadius: 20,
+          boxShadow: "0 24px 80px rgba(0,0,0,0.2), 0 4px 20px rgba(0,0,0,0.08)",
           overflow: "hidden",
           opacity: mounted ? 1 : 0,
-          transition: "opacity 150ms ease",
+          transition: "opacity 200ms ease, transform 200ms ease",
+          transform: mounted ? "translateY(0)" : "translateY(-6px)",
         }}
       >
         {/* Header - Always visible */}
         <PanelHeader onClose={onClose} />
 
         {/* Tab Bar - Always visible */}
-        <TabBar tab={tab} setTab={setTab} />
+        <TabBar tab={tab} setTab={setTab} tabs={TABS} />
 
         {/* Content - Scrollable with max height */}
         <section
@@ -181,6 +246,9 @@ export default function UserPanel({ onClose, anchor = "right" }) {
           tabIndex={-1}
         >
           <PanelErrorBoundary key={tab}>
+            {tab === linksTabLabel && (
+              <LinksTabContent content={customLinksContent} className={customLinksClassName} />
+            )}
             {tab === "Account" && <AccountTab onClose={onClose} />}
             {tab === "Security" && <SecurityTab />}
             {tab === "History" && <HistoryTab />}
@@ -202,7 +270,10 @@ function PanelHeader({ onClose }) {
   return (
     <header
       className="px-5 py-4 flex items-center gap-3 flex-shrink-0"
-      style={{ borderBottom: "1px solid var(--border)" }}
+      style={{ 
+        borderBottom: "1px solid var(--border)",
+        background: "linear-gradient(to bottom, var(--surface), var(--background))",
+      }}
     >
       <BorderedAvatar size={44} />
       <div className="flex-1 min-w-0">
@@ -216,7 +287,7 @@ function PanelHeader({ onClose }) {
       </div>
       <button
         onClick={onClose}
-        className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-colors hover:bg-[var(--surface-hover)]"
+        className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all hover:bg-[var(--surface-hover)] hover:scale-105"
         style={{ color: "var(--text-secondary)" }}
         aria-label="Close panel"
       >
@@ -227,20 +298,21 @@ function PanelHeader({ onClose }) {
 }
 
 /* ── Tab bar ──────────────────────────────────────────── */
-function TabBar({ tab, setTab }) {
+function TabBar({ tab, setTab, tabs }) {
   const tabRefs = useRef({});
 
   const onKeyDown = (e, index) => {
     let nextIndex = null;
-    if (e.key === "ArrowRight") nextIndex = (index + 1) % TABS.length;
-    if (e.key === "ArrowLeft") nextIndex = (index - 1 + TABS.length) % TABS.length;
+    if (e.key === "ArrowRight") nextIndex = (index + 1) % tabs.length;
+    if (e.key === "ArrowLeft") nextIndex = (index - 1 + tabs.length) % tabs.length;
     if (e.key === "Home") nextIndex = 0;
-    if (e.key === "End") nextIndex = TABS.length - 1;
+    if (e.key === "End") nextIndex = tabs.length - 1;
     if (nextIndex !== null) {
       e.preventDefault();
-      const nextTab = TABS[nextIndex];
+      const nextTab = tabs[nextIndex];
       setTab(nextTab);
       tabRefs.current[nextTab]?.focus();
+      tabRefs.current[nextTab]?.scrollIntoView({ block: "nearest", inline: "nearest" });
     }
   };
 
@@ -248,10 +320,13 @@ function TabBar({ tab, setTab }) {
     <nav
       role="tablist"
       aria-label="Account settings"
-      className="flex px-2 overflow-x-auto overflow-y-hidden panel-scroll h-10 flex-shrink-0"
-      style={{ borderBottom: "1px solid var(--border)" }}
+      className="flex justify-between px-2 max-[400px]:px-1 overflow-x-auto overflow-y-hidden panel-scroll h-11 flex-shrink-0"
+      style={{ 
+        borderBottom: "1px solid var(--border)",
+        background: "color-mix(in srgb, var(--surface) 98%, var(--brand-primary) 2%)",
+      }}
     >
-      {TABS.map((t, i) => (
+      {tabs.map((t, i) => (
         <button
           key={t}
           ref={(el) => { tabRefs.current[t] = el; }}
@@ -262,15 +337,16 @@ function TabBar({ tab, setTab }) {
           tabIndex={tab === t ? 0 : -1}
           onClick={() => setTab(t)}
           onKeyDown={(e) => onKeyDown(e, i)}
-          className="panel-tab px-3 py-2.5 text-xs font-medium transition-colors whitespace-nowrap hover:text-[var(--brand-primary)]"
+          className="panel-tab px-4 py-2.5 max-[400px]:px-2 max-[400px]:py-2 text-xs font-medium transition-all whitespace-nowrap hover:text-[var(--brand-primary)]"
           style={{
             color: tab === t ? "var(--brand-primary)" : "var(--text-secondary)",
             background: "transparent",
-            borderBottom: tab === t ? "2px solid var(--brand-primary)" : "2px solid transparent",
+            border: "none",
             marginBottom: -1,
+            letterSpacing: "0.03em",
           }}
         >
-          <strong>{t}</strong>
+          <span className="font-semibold max-[400px]:font-medium">{t}</span>
         </button>
       ))}
     </nav>
@@ -292,12 +368,12 @@ function PanelFooter({ onClose }) {
       <button
         onClick={() => { onClose(); logout.mutate(); }}
         disabled={logout.isPending}
-        className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg
-                   text-sm font-medium transition-all hover:bg-[color-mix(in_srgb,var(--danger)_8%,transparent)]"
+        className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl
+                   text-sm font-medium transition-all hover:bg-[color-mix(in_srgb,var(--danger)_8%,transparent)] hover:scale-[1.02]"
         style={{
           color: "var(--danger)",
           background: "transparent",
-          border: "1px solid transparent",
+          border: "1px solid color-mix(in srgb, var(--danger) 20%, transparent)",
         }}
         aria-label="Sign out of your account"
       >
@@ -305,6 +381,20 @@ function PanelFooter({ onClose }) {
         {logout.isPending ? "Signing out…" : "Sign out"}
       </button>
     </footer>
+  );
+}
+
+/* ══════════════════════════════════════════════════════
+   TAB 0 — LINKS (custom, project-specific, developer-owned markup)
+══════════════════════════════════════════════════════ */
+function LinksTabContent({ content, className }) {
+  return (
+    <section
+      className={["flex flex-col gap-2 p-4", className].filter(Boolean).join(" ")}
+      aria-label="Quick links"
+    >
+      {content}
+    </section>
   );
 }
 
@@ -373,7 +463,6 @@ function AccountTab({ onClose }) {
     <section className="p-5 space-y-4" aria-label="Account settings">
       {/* Avatar */}
       <div className="flex flex-col items-center gap-2">
-        <div className="relative">
           {editing ? (
             <>
               <button
@@ -382,9 +471,10 @@ function AccountTab({ onClose }) {
                 className="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center select-none hover:opacity-90 transition-opacity"
                 style={{
                   background: hasImage ? "transparent" : "var(--brand-primary)",
-                  color: "var(--brand-primary-foreground, #fff)",
+                  color: "#fff",
                   fontSize: 28, fontWeight: 700,
-                  border: "1px solid var(--border)",
+                  border: "2px solid var(--border)",
+                  boxShadow: "0 2px 8px color-mix(in srgb, var(--brand-primary) 20%, transparent)",
                 }}
                 aria-label="Change profile photo"
               >
@@ -402,11 +492,12 @@ function AccountTab({ onClose }) {
                   type="button"
                   onClick={handleRemoveAvatar}
                   aria-label="Remove photo"
-                  className="absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center transition-all hover:border-[var(--danger)] hover:text-[var(--danger)]"
+                  className="absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center transition-all hover:border-[var(--danger)] hover:text-[var(--danger)] hover:scale-110"
                   style={{
                     background: "var(--surface)",
                     border: "1px solid var(--border)",
-                    color: "var(--text-secondary)"
+                    color: "var(--text-secondary)",
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
                   }}
                 >
                   <Icons.X className="w-3 h-3" strokeWidth={2.5} />
@@ -420,9 +511,9 @@ function AccountTab({ onClose }) {
                 className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center transition-transform hover:scale-110"
                 style={{
                   background: "var(--brand-primary)",
-                  color: "var(--brand-primary-foreground, #fff)",
+                  color: "#fff",
                   border: "2px solid var(--surface)",
-                  boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
                 }}
               >
                 <Icons.Pencil className="w-3.5 h-3.5" />
@@ -437,39 +528,37 @@ function AccountTab({ onClose }) {
                 aria-label="Upload profile photo"
               />
             </>
-          ) : (
-            <div 
-              className="w-20 h-20 rounded-full overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-              style={{ border: "1px solid var(--border)" }}
-              onClick={() => {
-                if (avatarSrc) {
-                  // Open FileModal for avatar preview
-                  const modal = document.createElement('div');
-                  modal.style.position = 'fixed';
-                  modal.style.inset = '0';
-                  modal.style.zIndex = '9999';
-                  modal.style.pointerEvents = 'none';
-                  document.body.appendChild(modal);
-                  // Close modal on click outside
-                  const closeModal = () => {
-                    document.body.removeChild(modal);
-                    document.removeEventListener('click', closeModal);
-                  };
-                  document.addEventListener('click', closeModal);
-                }
-              }}
-            >
-              <FileModal
-                src={avatarSrc || ''}
-                alt="Profile photo"
-                type="IMAGE"
-                containerClassName="w-full h-full"
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
+        ) : hasImage ? (
+  <ImageViewer
+    src={avatarSrc}
+    alt={`${user?.name ?? "User"}'s profile photo`}
+    className="w-20 h-20 rounded-full overflow-hidden ecom-card"
+    style={{ border: "2px solid var(--border)" }}
+  >
+    <img
+      src={avatarSrc}
+      alt=""
+      loading="lazy"
+      decoding="async"
+      className="w-full h-full object-cover"
+    />
+  </ImageViewer>
+) : (
+  <div
+    className="w-20 h-20 rounded-full flex items-center justify-center select-none"
+    style={{
+      background: "var(--brand-primary)",
+      color: "#fff",
+      fontSize: 28,
+      fontWeight: 700,
+      border: "2px solid var(--border)",
+    }}
+    aria-hidden="true"
+  >
+    {getInitials(user?.name)}
+  </div>
+)}
         </div>
-      </div>
 
       {/* Info rows */}
       <dl className="space-y-1">
@@ -478,18 +567,18 @@ function AccountTab({ onClose }) {
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full text-sm px-2 py-1 rounded-md outline-none"
+              className="w-full text-sm px-3 py-1.5 rounded-lg outline-none transition-all"
               style={{
                 background: "var(--background)",
-                border: "1px solid var(--brand-primary)",
+                border: "2px solid var(--brand-primary)",
                 color: "var(--text-primary)",
-                boxShadow: "0 0 0 3px color-mix(in srgb, var(--brand-primary) 15%, transparent)",
+                boxShadow: `0 0 0 4px color-mix(in srgb, var(--brand-primary) 15%, transparent)`,
               }}
               autoFocus
               aria-label="Your name"
             />
           ) : (
-            <span className="text-sm" style={{ color: "var(--text-primary)" }}>{user?.name ?? "—"}</span>
+            <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{user?.name ?? "—"}</span>
           )}
         </InfoRow>
 
@@ -517,7 +606,9 @@ function AccountTab({ onClose }) {
           <PanelButton onClick={handleCancel} variant="outline">Cancel</PanelButton>
         </div>
       ) : (
-        <PanelButton onClick={() => setEditing(true)} variant="outline">Edit profile</PanelButton>
+        <PanelButton onClick={() => setEditing(true)} variant="outline" fullWidth>
+          Edit profile
+        </PanelButton>
       )}
     </section>
   );
@@ -541,17 +632,17 @@ function RefreshSessionCard() {
 
   return (
     <details
-      className="group p-2 rounded-xl space-y-2.5"
-      style={{ background: "var(--background)", border: "1px solid var(--border)" }}
+      className="group p-3 rounded-xl space-y-2.5 ecom-card"
+      style={{ background: "var(--background)" }}
     >
       <summary
         className="flex items-center justify-between cursor-pointer list-none"
         style={{ color: "var(--text-primary)" }}
         aria-label="Toggle session refresh details"
       >
-        <strong>Refresh session</strong>
+        <strong className="text-sm">Refresh session</strong>
         <span className="transition-transform duration-200 group-open:rotate-180">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
@@ -700,11 +791,15 @@ function PasswordField({ label, value, onChange, show, onToggleShow, autoComplet
           onChange={(e) => onChange(e.target.value)}
           autoComplete={autoComplete}
           required
-          className="w-full text-sm px-3 py-2 pr-9 rounded-lg outline-none transition-shadow"
-          style={{ background: "var(--background)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
+          className="w-full text-sm px-3 py-2 pr-9 rounded-lg outline-none transition-all"
+          style={{ 
+            background: "var(--background)", 
+            border: "1px solid var(--border)", 
+            color: "var(--text-primary)",
+          }}
           onFocus={(e) => {
             e.currentTarget.style.borderColor = "var(--brand-primary)";
-            e.currentTarget.style.boxShadow = "0 0 0 3px color-mix(in srgb, var(--brand-primary) 15%, transparent)";
+            e.currentTarget.style.boxShadow = `0 0 0 4px color-mix(in srgb, var(--brand-primary) 15%, transparent)`;
           }}
           onBlur={(e) => {
             e.currentTarget.style.borderColor = "var(--border)";
@@ -715,7 +810,7 @@ function PasswordField({ label, value, onChange, show, onToggleShow, autoComplet
           <button
             type="button"
             onClick={onToggleShow}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md hover:text-[var(--text-primary)]"
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md hover:text-[var(--text-primary)] transition-colors"
             style={{ color: "var(--text-secondary)" }}
             aria-label={show ? "Hide password" : "Show password"}
           >
@@ -737,7 +832,6 @@ function HistoryTab() {
   const downloadCSV = () => {
     if (!history.length) return;
 
-    // Headers
     const headers = [
       "Date/Time",
       "IP Address",
@@ -747,7 +841,6 @@ function HistoryTab() {
       "Screen Resolution"
     ];
 
-    // Rows
     const rows = history.map(entry => [
       entry.created_at ? new Date(entry.created_at).toLocaleString() : "",
       entry.ipAddress || "",
@@ -757,24 +850,21 @@ function HistoryTab() {
       entry.screenWidth && entry.screenHeight ? `${entry.screenWidth}×${entry.screenHeight}` : ""
     ]);
 
-    // Combine user info + table
     const userInfo = [
       ["User Information"],
       ["Name", user?.name || ""],
       ["Email", user?.email || ""],
       ["Role", user?.role || ""],
-      [""], // empty row separator
+      [""],
       ["Login History"],
       headers,
       ...rows
     ];
 
-    // Convert to CSV
     const csvContent = userInfo
       .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))
       .join("\n");
 
-    // Download
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
@@ -796,7 +886,7 @@ function HistoryTab() {
           {history.length > 0 && (
             <button
               onClick={downloadCSV}
-              className="p-1.5 rounded-md transition-colors hover:bg-[var(--surface-hover)]"
+              className="p-1.5 rounded-md transition-colors hover:bg-[var(--surface-hover)] hover:scale-105"
               aria-label="Download CSV"
               title="Download CSV"
             >
@@ -846,13 +936,16 @@ function HistoryCard({ entry }) {
 
   return (
     <article
-      className="p-3 rounded-xl space-y-2"
-      style={{ background: "var(--background)", border: "1px solid var(--border)" }}
+      className="p-3 rounded-xl space-y-2 ecom-card"
+      style={{ background: "var(--background)" }}
     >
       <div className="flex items-start gap-2">
         <div
           className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 mt-0.5"
-          style={{ background: "color-mix(in srgb, var(--brand-primary) 10%, transparent)", color: "var(--brand-primary)" }}
+          style={{ 
+            background: "color-mix(in srgb, var(--brand-primary) 12%, transparent)", 
+            color: "var(--brand-primary)" 
+          }}
           aria-hidden="true"
         >
           <Icons.Device type={entry.deviceType} className="w-3.5 h-3.5" />
@@ -903,8 +996,12 @@ function HistoryCard({ entry }) {
 function InfoBadge({ icon: Icon, label }) {
   return (
     <span
-      className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-md font-medium"
-      style={{ background: "var(--background)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
+      className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-md font-medium transition-colors hover:border-[var(--brand-primary)]"
+      style={{ 
+        background: "var(--background)", 
+        border: "1px solid var(--border)", 
+        color: "var(--text-primary)" 
+      }}
     >
       <Icon className="w-3.5 h-3.5 flex-shrink-0" />
       {label}
@@ -984,7 +1081,7 @@ function SessionsTab({ onClose }) {
           {sessions.length > 0 && (
             <button
               onClick={downloadCSV}
-              className="p-1.5 rounded-md transition-colors hover:bg-[var(--surface-hover)]"
+              className="p-1.5 rounded-md transition-colors hover:bg-[var(--surface-hover)] hover:scale-105"
               aria-label="Download CSV"
               title="Download CSV"
             >
@@ -1007,8 +1104,12 @@ function SessionsTab({ onClose }) {
             <button
               onClick={() => { onClose(); logoutAll.mutate(); }}
               disabled={logoutAll.isPending}
-              className="text-xs font-medium px-2 py-1 rounded-md transition-all hover:bg-[color-mix(in_srgb,var(--danger)_8%,transparent)]"
-              style={{ color: "var(--danger)", border: "1px solid var(--danger)", background: "transparent" }}
+              className="text-xs font-medium px-3 py-1.5 rounded-lg transition-all hover:bg-[color-mix(in_srgb,var(--danger)_8%,transparent)] hover:scale-[1.02]"
+              style={{ 
+                color: "var(--danger)", 
+                border: "1px solid color-mix(in srgb, var(--danger) 30%, transparent)", 
+                background: "transparent" 
+              }}
               aria-label="Sign out from all devices"
             >
               Sign out all
@@ -1047,22 +1148,32 @@ function SessionCard({ session, onRevoke, revoking }) {
     })
     : null;
 
+  const isActive = session.expiresAt ? new Date(session.expiresAt) > new Date() : false;
+
   return (
     <article
-      className="flex items-start gap-3 p-3 rounded-xl"
-      style={{ background: "var(--background)", border: "1px solid var(--border)" }}
+      className="flex items-start gap-3 p-3 rounded-xl ecom-card"
+      style={{ background: "var(--background)" }}
     >
       <div
         className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
-        style={{ background: "color-mix(in srgb, var(--brand-primary) 10%, transparent)", color: "var(--brand-primary)" }}
+        style={{ 
+          background: "color-mix(in srgb, var(--brand-primary) 12%, transparent)", 
+          color: "var(--brand-primary)" 
+        }}
         aria-hidden="true"
       >
         <Icons.Device type={session.deviceType} className="w-4 h-4" />
       </div>
       <div className="flex-1 min-w-0 space-y-0.5">
-        <p className="text-xs font-medium" style={{ color: "var(--text-primary)" }}>
-          {session.deviceType ?? "Unknown device"}
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="text-xs font-medium" style={{ color: "var(--text-primary)" }}>
+            {session.deviceType ?? "Unknown device"}
+          </p>
+          {isActive && (
+            <span className="status-pulse w-1.5 h-1.5 rounded-full" style={{ background: "var(--success)" }} />
+          )}
+        </div>
         {session.ipAddress && (
           <p className="text-xs" style={{ color: "var(--text-secondary)" }}>{session.ipAddress}</p>
         )}
@@ -1076,8 +1187,12 @@ function SessionCard({ session, onRevoke, revoking }) {
       <button
         onClick={onRevoke}
         disabled={revoking}
-        className="text-xs font-medium px-2 py-1 rounded-md flex-shrink-0 transition-all hover:border-[var(--danger)] hover:text-[var(--danger)]"
-        style={{ border: "1px solid var(--border)", color: "var(--text-secondary)", background: "transparent" }}
+        className="text-xs font-medium px-3 py-1.5 rounded-lg flex-shrink-0 transition-all hover:border-[var(--danger)] hover:text-[var(--danger)] hover:scale-[1.02]"
+        style={{ 
+          border: "1px solid var(--border)", 
+          color: "var(--text-secondary)", 
+          background: "transparent" 
+        }}
         aria-label={`Revoke session from ${session.deviceType || 'unknown device'}`}
       >
         {revoking ? "…" : "Revoke"}
@@ -1091,7 +1206,7 @@ function SessionCard({ session, onRevoke, revoking }) {
 ══════════════════════════════════════════════════════ */
 function BorderedAvatar({ size }) {
   return (
-    <div className="rounded-full inline-flex" style={{ border: "1px solid var(--border)", lineHeight: 0 }}>
+    <div className="rounded-full inline-flex" style={{ border: "2px solid var(--border)", lineHeight: 0 }}>
       <UserAvatar size={size} />
     </div>
   );
@@ -1099,7 +1214,7 @@ function BorderedAvatar({ size }) {
 
 function InfoRow({ label, children }) {
   return (
-    <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg" style={{ background: "var(--background)" }}>
+    <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl" style={{ background: "var(--background)" }}>
       <dt className="text-xs font-medium flex-shrink-0 w-14" style={{ color: "var(--text-secondary)" }}>
         {label}
       </dt>
@@ -1111,9 +1226,9 @@ function InfoRow({ label, children }) {
 function RoleBadge({ role }) {
   return (
     <span
-      className="inline-block text-xs px-2 py-0.5 rounded-full font-medium mt-1"
+      className="inline-block text-xs px-2.5 py-0.5 rounded-full font-medium mt-1 transition-colors"
       style={{
-        background: "color-mix(in srgb, var(--brand-primary) 12%, transparent)",
+        background: "color-mix(in srgb, var(--brand-primary) 14%, transparent)",
         color: "var(--brand-primary)",
       }}
     >
@@ -1122,17 +1237,25 @@ function RoleBadge({ role }) {
   );
 }
 
-function PanelButton({ children, onClick, variant = "primary", loading = false, type = "button" }) {
+function PanelButton({ children, onClick, variant = "primary", loading = false, type = "button", fullWidth = false }) {
   const isPrimary = variant === "primary";
   return (
     <button
       type={type}
       onClick={onClick}
       disabled={loading}
-      className="flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 hover:opacity-90"
+      className={`${fullWidth ? 'w-full' : 'flex-1'} py-2.5 px-4 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 hover:scale-[1.02] hover:shadow-md disabled:opacity-70 disabled:cursor-not-allowed`}
       style={isPrimary
-        ? { background: loading ? "var(--muted)" : "var(--brand-primary)", color: "var(--brand-primary-foreground, #fff)", opacity: loading ? 0.7 : 1 }
-        : { background: "transparent", border: "1px solid var(--border)", color: "var(--text-primary)" }}
+        ? { 
+            background: loading ? "var(--muted)" : "linear-gradient(135deg, var(--brand-primary), var(--brand-secondary))", 
+            color: "#fff",
+            boxShadow: "0 2px 8px color-mix(in srgb, var(--brand-primary) 30%, transparent)",
+          }
+        : { 
+            background: "transparent", 
+            border: "1px solid var(--border)", 
+            color: "var(--text-primary)" 
+          }}
     >
       {loading && <Spinner size={16} />}
       {children}
